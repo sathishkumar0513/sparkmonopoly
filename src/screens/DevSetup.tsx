@@ -20,6 +20,8 @@ const TOKENS = ["🚗", "🎩", "🚢", "🐕", "🚀", "🦊"];
 export function DevSetup({ onStart }: DevSetupProps) {
   const [count, setCount] = useState(3);
   const [seed, setSeed] = useState("20261109");
+  const [lateGamePressureEnabled, setLateGamePressureEnabled] = useState(false);
+  const [pressureStartTurn, setPressureStartTurn] = useState("120");
   const [botSpeed, setBotSpeed] = useState<BotSpeed>("normal");
   const [botsOnly, setBotsOnly] = useState(false);
   const [seats, setSeats] = useState<SeatDraft[]>(() =>
@@ -39,6 +41,9 @@ export function DevSetup({ onStart }: DevSetupProps) {
   const selectedSeats = useMemo(() => seats.slice(0, count), [count, seats]);
   const numericSeed = Number(seed);
   const validSeed = /^-?\d+$/.test(seed.trim()) && Number.isSafeInteger(numericSeed);
+  const numericPressureStart = Number(pressureStartTurn);
+  const validPressureStart = Number.isSafeInteger(numericPressureStart) && numericPressureStart > 0;
+  const validSetup = validSeed && (!lateGamePressureEnabled || validPressureStart);
 
   const updateSeat = (index: number, patch: Partial<SeatDraft>) => {
     setSeats((current) => current.map((seat, seatIndex) =>
@@ -55,9 +60,14 @@ export function DevSetup({ onStart }: DevSetupProps) {
     }));
 
   const start = () => {
-    if (!validSeed) return;
+    if (!validSetup) return;
     setSimulation(null);
-    onStart(createGame(internationalTheme, createSetups(), { seed: numericSeed }), botSpeed);
+    onStart(createGame(internationalTheme, createSetups(), {
+      seed: numericSeed,
+      lateGamePressure: lateGamePressureEnabled
+        ? { startTurn: numericPressureStart, rentMultiplier: 1.5 }
+        : null,
+    }), botSpeed);
   };
 
   const simulate = () => {
@@ -150,9 +160,38 @@ export function DevSetup({ onStart }: DevSetupProps) {
           <input type="checkbox" checked={botsOnly} onChange={(event) => setBotsOnly(event.target.checked)} />
           <span><strong>Bots only</strong><small>Set every seat to bot players for an instant simulation.</small></span>
         </label>
-        {validSeed ? null : <p className="setup-error" role="alert">Enter a whole-number seed.</p>}
+        <div className="simulation-toggle">
+          <input
+            id="late-game-pressure"
+            type="checkbox"
+            checked={lateGamePressureEnabled}
+            onChange={(event) => setLateGamePressureEnabled(event.target.checked)}
+          />
+          <label htmlFor="late-game-pressure">
+            <strong>Late-game rent pressure</strong>
+            <small>Optional house rule: rent rises to 1.5× from the selected round. Bot simulations always run without it.</small>
+          </label>
+          <div>
+            {lateGamePressureEnabled ? (
+              <label className="pressure-turn-field">
+                Start after round
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={pressureStartTurn}
+                  onChange={(event) => setPressureStartTurn(event.target.value)}
+                />
+              </label>
+            ) : null}
+          </div>
+        </div>
+        {!validSeed ? <p className="setup-error" role="alert">Enter a whole-number seed.</p> : null}
+        {lateGamePressureEnabled && !validPressureStart ? (
+          <p className="setup-error" role="alert">Choose a positive whole-number round for rent pressure.</p>
+        ) : null}
         <div className="setup-actions">
-          <button className="primary-button" disabled={!validSeed} onClick={start}>
+          <button className="primary-button" disabled={!validSetup} onClick={start}>
             Start game
           </button>
           {botsOnly ? (

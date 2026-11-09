@@ -1970,6 +1970,22 @@ button:focus-visible {
 .simulation-toggle input { accent-color: #53b6a8; }
 .simulation-toggle strong,.simulation-toggle small { display: block; }
 .simulation-toggle small { margin-top: 2px; color: #9cacc4; font-size: 0.67rem; }
+.pressure-turn-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+  color: #aab9cf;
+  font-size: 0.68rem;
+}
+.pressure-turn-field input {
+  width: 84px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 8px;
+  background: #101a2b;
+  color: #f3f6fb;
+}
 .setup-actions { display: flex; gap: 9px; margin-top: 14px; }
 .setup-error { color: #ffae9e; font-size: 0.72rem; }
 .simulation-result {

@@ -1,6 +1,6 @@
 import { getAvailableActions, gameReducer, validateTrade } from "../gameReducer";
 import { nextRandom } from "../random";
-import type { GameAction, GameState, Player, TradeOffer } from "../types";
+import type { GameAction, GameEvent, GameState, Player, TradeOffer } from "../types";
 
 export type BotDifficulty = "easy" | "medium";
 export type BotRandom = () => number;
@@ -69,7 +69,6 @@ export function chooseBotAction(
   if (state.phase === "trade") {
     const offer = state.pendingTrade?.offer;
     if (!offer || offer.toPlayerId !== playerId) return null;
-    if (difficulty === "easy") return available("REJECT_TRADE") ?? null;
     const gained = offer.propertiesFrom.reduce(
       (total, tileId) => total + propertyValue(state, player, tileId, true),
       offer.cashFrom,
@@ -103,7 +102,8 @@ export function chooseBotAction(
   if (state.phase === "purchase" && state.pendingPurchase) {
     const tile = state.theme.tiles.find((candidate) => candidate.id === state.pendingPurchase);
     if (!tile || !("price" in tile)) return available("DECLINE_PURCHASE") ?? null;
-    const reserve = difficulty === "easy" ? 250 : 300;
+    const salary = state.theme.tiles.find((candidate) => candidate.type === "go")?.salary ?? 0;
+    const reserve = salary * (difficulty === "easy" ? 1.25 : 0.25);
     const completion = tile.type === "property"
       ? colorSetCompletionBonus(state, player, tile.id)
       : 0;
@@ -159,14 +159,20 @@ export function chooseBotAction(
       (action): action is Extract<GameAction, { type: "BUILD_HOUSE" | "BUILD_HOTEL" }> =>
         action.type === "BUILD_HOUSE" || action.type === "BUILD_HOTEL",
     );
-    const affordableBuild = builds.find((action) => {
+    const salary = state.theme.tiles.find((tile) => tile.type === "go")?.salary ?? 0;
+    const cashReserve = Math.floor(salary * 0.25);
+    const affordableBuild = builds
+      .filter((action) => {
       const tile = state.theme.tiles.find((candidate) => candidate.id === action.tileId);
-      return tile && "houseCost" in tile && player.cash - tile.houseCost >= 350;
-    });
+        return tile && "houseCost" in tile && player.cash - tile.houseCost >= cashReserve;
+      })
+      .sort((left, right) =>
+        buildPriority(state, player, right) - buildPriority(state, player, left),
+      )[0];
     if (affordableBuild) return affordableBuild;
     if (
       (state.phase === "roll" || state.phase === "endTurn") &&
-      rng() < 0.06
+      rng() < 0.12
     ) {
       const offer = createSetCompletionOffer(state, player);
       if (offer && validateTrade(state, offer).length === 0) {
@@ -182,18 +188,33 @@ export function chooseBotAction(
 
 export function runBotGame(
   initialState: GameState,
-  options: { turnCap?: number; actionCapPerTurn?: number } = {},
+  options: {
+    turnCap?: number;
+    actionCapPerTurn?: number;
+    retainEventLog?: boolean;
+    onEvents?: (events: GameEvent[]) => void;
+  } = {},
 ): BotGameResult {
   const turnCap = options.turnCap ?? 1000;
   const actionCapPerTurn = options.actionCapPerTurn ?? 80;
+  const retainEventLog = options.retainEventLog ?? true;
   let state = initialState;
   let rng = createBotRandom(state.rngState ^ 0x9e3779b9);
   let actionsThisTurn = 0;
-  let previousTurn = state.turnNumber;
+  let previousActorId: string | null = null;
 
   while (state.phase !== "gameOver" && state.turnNumber <= turnCap) {
-    if (state.turnNumber !== previousTurn) {
-      previousTurn = state.turnNumber;
+    const actor = getBotActor(state);
+    if (!actor) {
+      return {
+        state,
+        outcome: "draw",
+        turns: state.turnNumber,
+        reason: `No bot can act during the ${state.phase} phase.`,
+      };
+    }
+    if (actor.id !== previousActorId) {
+      previousActorId = actor.id;
       actionsThisTurn = 0;
     }
     if (actionsThisTurn >= actionCapPerTurn) {
@@ -202,15 +223,6 @@ export function runBotGame(
         outcome: "draw",
         turns: state.turnNumber,
         reason: `Turn action cap (${actionCapPerTurn}) reached.`,
-      };
-    }
-    const actor = getBotActor(state);
-    if (!actor) {
-      return {
-        state,
-        outcome: "draw",
-        turns: state.turnNumber,
-        reason: `No bot can act during the ${state.phase} phase.`,
       };
     }
     const action = chooseBotAction(state, actor.id, actor.botDifficulty, rng);
@@ -222,8 +234,18 @@ export function runBotGame(
         reason: `Bot ${actor.name} has no legal action during ${state.phase}.`,
       };
     }
-    state = gameReducer(state, action);
-    actionsThisTurn += 1;
+    const actionState = retainEventLog ? state : { ...state, eventLog: [] };
+    state = gameReducer(actionState, action);
+    if (!retainEventLog) {
+      options.onEvents?.(state.eventLog);
+      state = { ...state, eventLog: [] };
+    }
+    if (action.type === "END_TURN") {
+      actionsThisTurn = 0;
+      previousActorId = null;
+    } else {
+      actionsThisTurn += 1;
+    }
     rng = createBotRandom(state.rngState ^ (state.nextEventId * 0x45d9f3b));
   }
   return {
@@ -248,12 +270,19 @@ function propertyValue(
     .map((candidate) => candidate.properties[tileId])
     .find(Boolean);
   let value = holding?.mortgaged ? Math.floor(tile.price * 0.6) : tile.price;
-  if (tile.type === "property" && receiving) {
+  if (tile.type === "property") {
     const group = state.theme.tiles.filter(
       (candidate) => candidate.type === "property" && candidate.colorGroup === tile.colorGroup,
     );
     const have = group.filter((member) => player.properties[member.id]).length;
-    if (have === group.length - 1 && !player.properties[tileId]) value += tile.price * 0.5;
+    if (receiving && !player.properties[tileId]) {
+      if (have === group.length - 1) value += tile.price;
+      else if (have > 0) value += tile.price * 0.15;
+    } else if (!receiving && player.properties[tileId]) {
+      if (have === group.length) value += tile.price * 2;
+      else if (have === group.length - 1) value += tile.price;
+      else if (have > 1) value += tile.price * 0.15;
+    }
   }
   return value;
 }
@@ -268,35 +297,65 @@ function colorSetCompletionBonus(state: GameState, player: Player, tileId: strin
   return owned === group.length - 1 ? 1 : owned > 0 ? 0.35 : 0;
 }
 
+function buildPriority(
+  state: GameState,
+  player: Player,
+  action: Extract<GameAction, { type: "BUILD_HOUSE" | "BUILD_HOTEL" }>,
+): number {
+  const tile = state.theme.tiles.find((candidate) => candidate.id === action.tileId);
+  if (!tile || tile.type !== "property") return 0;
+  const holding = player.properties[tile.id];
+  if (!holding || holding.level >= 5) return 0;
+  const currentRent = holding.level === 0
+    ? tile.rent.colorSetDouble
+    : tile.rent.houses[holding.level - 1] ?? 0;
+  const nextRent = holding.level === 4
+    ? tile.rent.hotel
+    : tile.rent.houses[holding.level] ?? 0;
+  return (nextRent - currentRent) / tile.houseCost;
+}
+
 function createSetCompletionOffer(state: GameState, player: Player): TradeOffer | null {
+  let best: { offer: TradeOffer; score: number } | null = null;
   for (const tile of state.theme.tiles) {
     if (tile.type !== "property" || player.properties[tile.id]) continue;
     const group = state.theme.tiles.filter(
       (candidate) => candidate.type === "property" && candidate.colorGroup === tile.colorGroup,
     );
-    if (!group.some((member) => player.properties[member.id])) continue;
+    const ownedInGroup = group.filter((member) => player.properties[member.id]).length;
+    if (ownedInGroup !== group.length - 1) continue;
     const partner = state.players.find(
       (candidate) => !candidate.bankrupt && candidate.id !== player.id &&
         candidate.properties[tile.id],
     );
     if (!partner) continue;
-    const ownAsset = Object.keys(player.properties).find((id) => {
-      const candidate = state.theme.tiles.find((entry) => entry.id === id);
-      return candidate && "price" in candidate && candidate.price === tile.price &&
-        player.properties[id]?.level === 0;
-    });
-    if (!ownAsset) continue;
-    const offer: TradeOffer = {
-      fromPlayerId: player.id,
-      toPlayerId: partner.id,
-      cashFrom: 0,
-      cashTo: 0,
-      propertiesFrom: [ownAsset],
-      propertiesTo: [tile.id],
-      jailCardsFrom: [],
-      jailCardsTo: [],
-    };
-    if (validateTrade(state, offer).length === 0) return offer;
+    for (const ownAsset of Object.keys(player.properties)) {
+      const candidate = state.theme.tiles.find((entry) => entry.id === ownAsset);
+      if (!candidate || !("price" in candidate) || player.properties[ownAsset]?.level !== 0) continue;
+      const senderDelta =
+        propertyValue(state, player, tile.id, true) -
+        propertyValue(state, player, ownAsset, false);
+      const partnerDelta =
+        propertyValue(state, partner, ownAsset, true) -
+        propertyValue(state, partner, tile.id, false);
+      const surplus = senderDelta + partnerDelta;
+      if (surplus <= 0) continue;
+
+      const cashTransfer = Math.round((senderDelta - partnerDelta) / 2);
+      const offer: TradeOffer = {
+        fromPlayerId: player.id,
+        toPlayerId: partner.id,
+        cashFrom: Math.max(0, cashTransfer),
+        cashTo: Math.max(0, -cashTransfer),
+        propertiesFrom: [ownAsset],
+        propertiesTo: [tile.id],
+        jailCardsFrom: [],
+        jailCardsTo: [],
+      };
+      if (validateTrade(state, offer).length > 0) continue;
+      const score = Math.min(senderDelta - cashTransfer, partnerDelta + cashTransfer);
+      if (!best || score > best.score) best = { offer, score };
+    }
   }
-  return null;
+  return best?.offer ?? null;
 }

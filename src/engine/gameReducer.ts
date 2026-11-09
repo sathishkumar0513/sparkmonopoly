@@ -24,6 +24,7 @@ const DEFAULT_OPTIONS = {
   hotelSupply: 12,
   doubleSalaryOnGo: false,
   freeParkingJackpot: false,
+  lateGamePressure: null,
 } as const;
 
 function assertRule(condition: unknown, message: string): asserts condition {
@@ -162,6 +163,18 @@ export function createGame(
     }
   }
   assertRule(settings.maxJailTurns > 0, "maxJailTurns must be greater than zero.");
+  if (settings.lateGamePressure) {
+    assertRule(
+      Number.isSafeInteger(settings.lateGamePressure.startTurn) &&
+        settings.lateGamePressure.startTurn > 0,
+      "lateGamePressure.startTurn must be a positive whole number.",
+    );
+    assertRule(
+      Number.isFinite(settings.lateGamePressure.rentMultiplier) &&
+        settings.lateGamePressure.rentMultiplier > 1,
+      "lateGamePressure.rentMultiplier must be greater than one.",
+    );
+  }
   const seed = (options.seed >>> 0) || 0x6d2b79f5;
   const shuffled = shuffleDecks(theme, seed);
   const players: Player[] = playerSetups.map((setup) => ({
@@ -239,25 +252,29 @@ export function calculateRent(
   const owner = getPlayer(state, ownerId);
   const holding = owner.properties[tileId];
   if (!holding || holding.mortgaged) return 0;
+  const pressure = (rent: number) => state.settings.lateGamePressure &&
+    state.turnNumber >= state.settings.lateGamePressure.startTurn
+    ? Math.ceil(rent * state.settings.lateGamePressure.rentMultiplier)
+    : rent;
 
   switch (tile.type) {
     case "property": {
-      if (holding.level === 5) return tile.rent.hotel;
-      if (holding.level > 0) return tile.rent.houses[holding.level - 1];
+      if (holding.level === 5) return pressure(tile.rent.hotel);
+      if (holding.level > 0) return pressure(tile.rent.houses[holding.level - 1]);
       const group = propertiesInGroup(state, tile.colorGroup);
       const completeAndClear = group.every(
         (member) =>
           ownsTile(owner, member.id) &&
           !owner.properties[member.id].mortgaged,
       );
-      return completeAndClear ? tile.rent.colorSetDouble : tile.rent.base;
+      return pressure(completeAndClear ? tile.rent.colorSetDouble : tile.rent.base);
     }
     case "transport": {
       const count = state.theme.tiles.filter(
         (candidate) =>
           candidate.type === "transport" && ownsTile(owner, candidate.id),
       ).length;
-      return count === 0 ? 0 : tile.rentByCount[count - 1];
+      return pressure(count === 0 ? 0 : tile.rentByCount[count - 1]);
     }
     case "utility": {
       const count = state.theme.tiles.filter(
@@ -265,7 +282,7 @@ export function calculateRent(
           candidate.type === "utility" && ownsTile(owner, candidate.id),
       ).length;
       const multiplier = tile.diceMultipliers[count === 2 ? 1 : 0];
-      return diceTotal * multiplier;
+      return pressure(diceTotal * multiplier);
     }
     default:
       return 0;

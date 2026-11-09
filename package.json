@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "simulate": "vite-node src/engine/bots/simulate.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",

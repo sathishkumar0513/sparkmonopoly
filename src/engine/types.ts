@@ -16,6 +16,7 @@ export interface GameOptions {
   hotelSupply?: number;
   doubleSalaryOnGo?: boolean;
   freeParkingJackpot?: boolean;
+  lateGamePressure?: { startTurn: number; rentMultiplier: number } | null;
 }
 
 export interface PropertyHolding {

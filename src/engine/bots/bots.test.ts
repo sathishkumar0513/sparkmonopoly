@@ -45,4 +45,29 @@ describe("bot action policy", () => {
       }
     }
   });
+
+  it("finishes at least 90% of 50 seeded 3-4 player games without illegal bot actions", () => {
+    let winners = 0;
+    for (let index = 0; index < 50; index += 1) {
+      const seed = 31000 + index;
+      const playerCount = 3 + (index % 2);
+      const setups = Array.from({ length: playerCount }, (_, seat) => ({
+        id: `player-${seat + 1}`,
+        name: `Player ${seat + 1}`,
+        isBot: true,
+        botDifficulty: (seat + index) % 2 === 0 ? "easy" as const : "medium" as const,
+      }));
+      const result = runBotGame(
+        createGame(internationalData, setups, { seed }),
+        { turnCap: 1000, retainEventLog: false },
+      );
+      expect(result.turns, `seed ${seed} exceeded the cap`).toBeLessThanOrEqual(1000);
+      expect(result.reason, `seed ${seed} stopped on an illegal bot action`).not.toMatch(/no legal action|illegal action/i);
+      if (result.outcome === "winner") {
+        winners += 1;
+        expect(result.state.winnerId).not.toBeNull();
+      }
+    }
+    expect(winners).toBeGreaterThanOrEqual(45);
+  });
 });

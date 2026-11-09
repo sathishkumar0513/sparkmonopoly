@@ -89,6 +89,23 @@ describe("rent calculation", () => {
     });
     expect(calculateRent(state, "grid-power", "p1", 8)).toBe(80);
   });
+
+  it("keeps late-game rent pressure off by default and applies it only after its configured round", () => {
+    let state = withHoldings(makeGame(), "p1", {
+      "harbor-labs": { level: 0, mortgaged: false },
+    });
+    expect(state.settings.lateGamePressure).toBeNull();
+    expect(calculateRent(state, "harbor-labs", "p1")).toBe(2);
+
+    state = {
+      ...state,
+      settings: { ...state.settings, lateGamePressure: { startTurn: 10, rentMultiplier: 1.5 } },
+      turnNumber: 9,
+    };
+    expect(calculateRent(state, "harbor-labs", "p1")).toBe(2);
+    state = { ...state, turnNumber: 10 };
+    expect(calculateRent(state, "harbor-labs", "p1")).toBe(3);
+  });
 });
 
 describe("property management", () => {
