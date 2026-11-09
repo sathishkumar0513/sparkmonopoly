@@ -9,6 +9,7 @@ import type {
   GameOptions,
   GameState,
   PendingCard,
+  TradeOffer,
   Player,
   PlayerSetup,
   PropertyHolding,
@@ -72,6 +73,8 @@ function snapshot(state: GameState): UndoFrame {
     auction: state.auction,
     pendingDebt: state.pendingDebt,
     pendingCard: state.pendingCard,
+    pendingTrade: state.pendingTrade,
+    bankAuctionQueue: state.bankAuctionQueue,
     winnerId: state.winnerId,
     freeParkingPot: state.freeParkingPot,
     afterLandingPhase: state.afterLandingPhase,
@@ -165,6 +168,7 @@ export function createGame(
     id: setup.id,
     name: setup.name.trim(),
     isBot: setup.isBot ?? false,
+    botDifficulty: setup.botDifficulty ?? "easy",
     cash: settings.startingCash,
     position: 0,
     properties: {},
@@ -189,6 +193,8 @@ export function createGame(
     auction: null,
     pendingDebt: null,
     pendingCard: null,
+    pendingTrade: null,
+    bankAuctionQueue: [],
     winnerId: null,
     freeParkingPot: 0,
     afterLandingPhase: "endTurn",
@@ -690,7 +696,35 @@ function finishAuction(state: GameState, auction: AuctionState): GameState {
       amount: auction.highBid,
     });
   }
-  return { ...next, phase: next.afterLandingPhase };
+  const queue = [...next.bankAuctionQueue];
+  while (queue.length > 0) {
+    const tileId = queue.shift();
+    if (!tileId || next.players.some((player) => ownsTile(player, tileId))) continue;
+    const bidders = activePlayers(next);
+    if (bidders.length < 2) break;
+    const first = bidders.find(
+      (player) => player.id === next.players[next.currentPlayerIndex]?.id,
+    ) ?? bidders[0];
+    if (!first) break;
+    next = {
+      ...next,
+      phase: "auction",
+      bankAuctionQueue: queue,
+      auction: {
+        tileId,
+        highBid: 0,
+        highBidderId: null,
+        activePlayerId: first.id,
+        passedPlayerIds: [],
+      },
+    };
+    return next;
+  }
+  return {
+    ...next,
+    bankAuctionQueue: [],
+    phase: next.afterLandingPhase,
+  };
 }
 
 function startAuction(state: GameState): GameState {
@@ -829,7 +863,7 @@ function sellBuilding(state: GameState, tileId: string): GameState {
   const holding = player.properties[tileId];
   assertRule(holding && holding.level > 0, "This property has no buildings to sell.");
   const group = propertiesInGroup(state, tile.colorGroup);
-  const maximum = Math.max(...group.map((member) => player.properties[member.id].level));
+  const maximum = Math.max(...group.map((member) => player.properties[member.id]?.level ?? 0));
   assertRule(holding.level === maximum, "Buildings must be sold evenly.");
   if (holding.level === 5) {
     const housesInUse = state.players.reduce(
@@ -899,6 +933,185 @@ function unmortgage(state: GameState, tileId: string): GameState {
   }));
 }
 
+export function validateTrade(state: GameState, offer: TradeOffer): string[] {
+  const errors: string[] = [];
+  const from = state.players.find((player) => player.id === offer.fromPlayerId);
+  const to = state.players.find((player) => player.id === offer.toPlayerId);
+  if (!from || !to) return ["Both trade partners must be in the game."];
+  if (from.id === to.id) errors.push("Choose a different trade partner.");
+  if (
+    offer.cashFrom === 0 && offer.cashTo === 0 &&
+    offer.propertiesFrom.length === 0 && offer.propertiesTo.length === 0 &&
+    offer.jailCardsFrom.length === 0 && offer.jailCardsTo.length === 0
+  ) errors.push("Include cash, property, or a release card in the trade.");
+  if (from.bankrupt || to.bankrupt) errors.push("Bankrupt players cannot trade.");
+  if (!Number.isInteger(offer.cashFrom) || offer.cashFrom < 0 ||
+      !Number.isInteger(offer.cashTo) || offer.cashTo < 0) {
+    errors.push("Cash offers must be non-negative whole numbers.");
+  }
+  if (from.cash < offer.cashFrom) errors.push(`${from.name} does not have enough cash.`);
+  if (to.cash < offer.cashTo) errors.push(`${to.name} does not have enough cash.`);
+  if (new Set(offer.propertiesFrom).size !== offer.propertiesFrom.length ||
+      new Set(offer.propertiesTo).size !== offer.propertiesTo.length) {
+    errors.push("A property can only appear once in a trade.");
+  }
+  if (new Set(offer.jailCardsFrom).size !== offer.jailCardsFrom.length ||
+      new Set(offer.jailCardsTo).size !== offer.jailCardsTo.length) {
+    errors.push("A release card can only appear once in a trade.");
+  }
+
+  const validateAssets = (
+    owner: Player,
+    propertyIds: string[],
+    cardIds: string[],
+  ) => {
+    for (const tileId of propertyIds) {
+      const tile = state.theme.tiles.find((candidate) => candidate.id === tileId);
+      if (!tile || !("price" in tile) || !owner.properties[tileId]) {
+        errors.push(`${owner.name} does not own ${tile?.name ?? tileId}.`);
+        continue;
+      }
+      if (tile.type === "property") {
+        const group = propertiesInGroup(state, tile.colorGroup);
+        const hasBuildings = group.some(
+          (member) => (owner.properties[member.id]?.level ?? 0) > 0,
+        );
+        if (hasBuildings) {
+          errors.push(`Sell all buildings in ${tile.colorGroup} before trading its properties.`);
+        }
+      }
+    }
+    const availableCards = [...owner.jailCards];
+    for (const cardId of cardIds) {
+      const cardIndex = availableCards.indexOf(cardId);
+      if (cardIndex < 0) errors.push(`${owner.name} does not hold that release card.`);
+      else availableCards.splice(cardIndex, 1);
+    }
+  };
+  validateAssets(from, offer.propertiesFrom, offer.jailCardsFrom);
+  validateAssets(to, offer.propertiesTo, offer.jailCardsTo);
+  const interestFor = (owner: Player, propertyIds: string[]) =>
+    propertyIds.reduce((total, tileId) => {
+      const tile = state.theme.tiles.find((candidate) => candidate.id === tileId);
+      return total + (
+        tile && "mortgageValue" in tile && owner.properties[tileId]?.mortgaged
+          ? Math.ceil(tile.mortgageValue * 0.1)
+          : 0
+      );
+    }, 0);
+  const interestFrom = interestFor(to, offer.propertiesTo);
+  const interestTo = interestFor(from, offer.propertiesFrom);
+  if (from.cash - offer.cashFrom + offer.cashTo < interestFrom) {
+    errors.push(`${from.name} needs more cash to accept mortgage interest.`);
+  }
+  if (to.cash - offer.cashTo + offer.cashFrom < interestTo) {
+    errors.push(`${to.name} needs more cash to accept mortgage interest.`);
+  }
+  return [...new Set(errors)];
+}
+
+function proposeTrade(state: GameState, offer: TradeOffer): GameState {
+  assertRule(
+    state.phase === "roll" || state.phase === "endTurn",
+    "Trades can only be proposed between moves.",
+  );
+  assertRule(
+    offer.fromPlayerId === currentPlayer(state).id,
+    "The active player must make the trade offer.",
+  );
+  const errors = validateTrade(state, offer);
+  assertRule(errors.length === 0, errors[0] ?? "This trade is invalid.");
+  return {
+    ...state,
+    phase: "trade",
+    pendingTrade: { offer, returnPhase: state.phase },
+  };
+}
+
+function counterTrade(state: GameState, offer: TradeOffer): GameState {
+  const pending = state.pendingTrade;
+  assertRule(state.phase === "trade" && pending, "There is no trade to counter.");
+  const currentOffer = pending.offer;
+  assertRule(
+    offer.fromPlayerId === currentOffer.toPlayerId &&
+      offer.toPlayerId === currentOffer.fromPlayerId,
+    "A counter-offer must come from the trade partner.",
+  );
+  const errors = validateTrade(state, offer);
+  assertRule(errors.length === 0, errors[0] ?? "This counter-offer is invalid.");
+  return {
+    ...state,
+    pendingTrade: { offer, returnPhase: pending.returnPhase },
+  };
+}
+
+function resolveTrade(state: GameState, accept: boolean): GameState {
+  const pending = state.pendingTrade;
+  const offer = pending?.offer;
+  assertRule(state.phase === "trade" && pending && offer, "There is no trade awaiting a response.");
+  if (!accept) {
+    const rejected: GameState = {
+      ...state,
+      phase: pending.returnPhase,
+      pendingTrade: null,
+    };
+    return withEvent(rejected, "TRADE_REJECTED", offer.toPlayerId);
+  }
+  const errors = validateTrade(state, offer);
+  assertRule(errors.length === 0, errors[0] ?? "This trade is no longer valid.");
+  const from = getPlayer(state, offer.fromPlayerId);
+  const to = getPlayer(state, offer.toPlayerId);
+  const fromPropertyIds = offer.propertiesFrom;
+  const toPropertyIds = offer.propertiesTo;
+  const interestTo = fromPropertyIds.reduce((sum, tileId) => {
+    const tile = getBuyableTile(state, tileId);
+    return sum + (from.properties[tileId]?.mortgaged ? Math.ceil(tile.mortgageValue * 0.1) : 0);
+  }, 0);
+  const interestFrom = toPropertyIds.reduce((sum, tileId) => {
+    const tile = getBuyableTile(state, tileId);
+    return sum + (to.properties[tileId]?.mortgaged ? Math.ceil(tile.mortgageValue * 0.1) : 0);
+  }, 0);
+  let next: GameState = {
+    ...state,
+    phase: pending.returnPhase,
+    pendingTrade: null,
+    players: state.players.map((player) => {
+      if (player.id !== from.id && player.id !== to.id) return player;
+      const isFrom = player.id === from.id;
+      const leaving = isFrom ? fromPropertyIds : toPropertyIds;
+      const arriving = isFrom ? toPropertyIds : fromPropertyIds;
+      const cardsLeaving = isFrom ? offer.jailCardsFrom : offer.jailCardsTo;
+      const cardsArriving = isFrom ? offer.jailCardsTo : offer.jailCardsFrom;
+      const cashOut = isFrom ? offer.cashFrom : offer.cashTo;
+      const cashIn = isFrom ? offer.cashTo : offer.cashFrom;
+      const interest = isFrom ? interestFrom : interestTo;
+      const properties = { ...player.properties };
+      for (const tileId of leaving) delete properties[tileId];
+      for (const tileId of arriving) {
+        const holding = (isFrom ? to : from).properties[tileId];
+        if (holding) properties[tileId] = holding;
+      }
+      return {
+        ...player,
+        cash: player.cash - cashOut + cashIn - interest,
+        properties,
+        jailCards: [
+          ...player.jailCards.filter((cardId) => !cardsLeaving.includes(cardId)),
+          ...cardsArriving,
+        ],
+      };
+    }),
+  };
+  next = withEvent(next, "TRADE_ACCEPTED", offer.fromPlayerId, {
+    partnerId: offer.toPlayerId,
+    cashFrom: offer.cashFrom,
+    cashTo: offer.cashTo,
+    propertiesFrom: offer.propertiesFrom.join(","),
+    propertiesTo: offer.propertiesTo.join(","),
+  });
+  return next;
+}
+
 function payDebt(state: GameState): GameState {
   const debt = state.pendingDebt;
   assertRule(state.phase === "debt" && debt, "There is no outstanding debt.");
@@ -936,7 +1149,8 @@ function bankrupt(state: GameState): GameState {
   const debtor = getPlayer(state, debt.debtorId);
   const creditor = debt.creditorId ? getPlayer(state, debt.creditorId) : null;
   let next = state;
-  if (creditor && debtor.cash > 0) {
+  const surrenderedProperties = Object.keys(debtor.properties);
+  if (creditor) {
     next = updatePlayer(next, creditor.id, (player) => ({
       ...player,
       cash: player.cash + debtor.cash,
@@ -944,6 +1158,12 @@ function bankrupt(state: GameState): GameState {
       jailCards: [...player.jailCards, ...debtor.jailCards],
     }));
   }
+  const bankAuctionQueue = creditor
+    ? state.bankAuctionQueue
+    : [
+        ...state.bankAuctionQueue,
+        ...surrenderedProperties,
+      ];
   next = updatePlayer(next, debtor.id, (player) => ({
     ...player,
     cash: 0,
@@ -956,6 +1176,7 @@ function bankrupt(state: GameState): GameState {
   const winnerId = remaining.length === 1 ? remaining[0].id : null;
   next = {
     ...next,
+    bankAuctionQueue,
     pendingDebt: null,
     pendingPurchase: null,
     auction: null,
@@ -965,6 +1186,7 @@ function bankrupt(state: GameState): GameState {
   next = withEvent(next, "BANKRUPTCY", debtor.id, {
     creditorId: creditor?.id ?? null,
     amount: debt.amount,
+    properties: surrenderedProperties.join(","),
   });
   if (!winnerId) {
     const nextIndex = next.players.findIndex(
@@ -978,6 +1200,27 @@ function bankrupt(state: GameState): GameState {
     } else {
       const eligibleIndex = next.players.findIndex((player) => !player.bankrupt);
       if (eligibleIndex >= 0) next = { ...next, currentPlayerIndex: eligibleIndex };
+    }
+  }
+  if (!winnerId && bankAuctionQueue.length > 0) {
+    const firstTileId = bankAuctionQueue[0];
+    const bidders = activePlayers(next);
+    if (bidders.length > 1 && firstTileId) {
+      const first = next.players[next.currentPlayerIndex];
+      next = {
+        ...next,
+        phase: "auction",
+        bankAuctionQueue: bankAuctionQueue.slice(1),
+        auction: {
+          tileId: firstTileId,
+          highBid: 0,
+          highBidderId: null,
+          activePlayerId: first?.bankrupt ? bidders[0].id : first.id,
+          passedPlayerIds: [],
+        },
+      };
+    } else {
+      next = { ...next, bankAuctionQueue: [] };
     }
   }
   return next;
@@ -1042,13 +1285,170 @@ function endTurn(state: GameState): GameState {
   };
 }
 
+function managementActions(state: GameState, player: Player): GameAction[] {
+  const actions: GameAction[] = [];
+  for (const [tileId, holding] of Object.entries(player.properties)) {
+    const tile = state.theme.tiles.find((candidate) => candidate.id === tileId);
+    if (!tile || tile.type !== "property") {
+      if (holding.mortgaged && tile && "mortgageValue" in tile &&
+          player.cash >= Math.ceil(tile.mortgageValue * 1.1)) {
+        actions.push({ type: "UNMORTGAGE", tileId });
+      } else if (tile && !holding.mortgaged) {
+        actions.push({ type: "MORTGAGE", tileId });
+      }
+      continue;
+    }
+    const group = propertiesInGroup(state, tile.colorGroup);
+    const complete = ownsFullGroup(state, player, tile.colorGroup);
+    const groupClear = group.every((member) => !player.properties[member.id]?.mortgaged);
+    const housesInUse = state.players.reduce(
+      (total, owner) => total + Object.values(owner.properties).reduce(
+        (sum, asset) => sum + (asset.level === 5 ? 0 : asset.level),
+        0,
+      ),
+      0,
+    );
+    const hotelsInUse = state.players.reduce(
+      (total, owner) => total + Object.values(owner.properties)
+        .filter((asset) => asset.level === 5).length,
+      0,
+    );
+    if (
+      complete && groupClear && holding.level < 4 &&
+      holding.level === Math.min(...group.map((member) => player.properties[member.id].level)) &&
+      housesInUse < state.settings.houseSupply && player.cash >= tile.houseCost
+    ) {
+      actions.push({ type: "BUILD_HOUSE", tileId });
+    } else if (
+      complete && groupClear && holding.level === 4 &&
+      group.every((member) => player.properties[member.id].level >= 4) &&
+      hotelsInUse < state.settings.hotelSupply && player.cash >= tile.houseCost
+    ) {
+      actions.push({ type: "BUILD_HOTEL", tileId });
+    }
+    const maxLevel = Math.max(...group.map((member) => player.properties[member.id]?.level ?? 0));
+    const housesAvailable = state.settings.houseSupply - housesInUse;
+    if (holding.level > 0 && holding.level === maxLevel &&
+        (holding.level !== 5 || housesAvailable >= 4)) {
+      actions.push({ type: "SELL_BUILDING", tileId });
+    }
+    const groupHasBuildings = group.some(
+      (member) => (player.properties[member.id]?.level ?? 0) > 0,
+    );
+    if (!holding.mortgaged && !groupHasBuildings) {
+      actions.push({ type: "MORTGAGE", tileId });
+    }
+    if (holding.mortgaged && player.cash >= Math.ceil(tile.mortgageValue * 1.1)) {
+      actions.push({ type: "UNMORTGAGE", tileId });
+    }
+  }
+  return actions;
+}
+
+export type ManagementActionType =
+  | "BUILD_HOUSE"
+  | "BUILD_HOTEL"
+  | "SELL_BUILDING"
+  | "MORTGAGE"
+  | "UNMORTGAGE";
+
+export function getManagementActionReason(
+  state: GameState,
+  playerId: string,
+  tileId: string,
+  type: ManagementActionType,
+): string | null {
+  const player = state.players.find((candidate) => candidate.id === playerId);
+  const tile = state.theme.tiles.find((candidate) => candidate.id === tileId);
+  if (!player || !tile || !("price" in tile)) return "This asset cannot be managed.";
+  const holding = player.properties[tileId];
+  if (!holding) return "This player does not own this asset.";
+  if (state.players[state.currentPlayerIndex]?.id !== playerId) {
+    return "Only the active player can manage assets.";
+  }
+  if (type === "MORTGAGE") {
+    if (holding.mortgaged) return "This asset is already mortgaged.";
+    if (tile.type === "property" && propertiesInGroup(state, tile.colorGroup)
+      .some((member) => (player.properties[member.id]?.level ?? 0) > 0)) {
+      return "Sell all buildings in the colour set first.";
+    }
+    return null;
+  }
+  if (type === "UNMORTGAGE") {
+    if (!holding.mortgaged) return "This asset is not mortgaged.";
+    if (player.cash < Math.ceil(tile.mortgageValue * 1.1)) {
+      return "Not enough cash to pay the 10% interest.";
+    }
+    return null;
+  }
+  if (tile.type !== "property") return "Only properties can have buildings.";
+  const group = propertiesInGroup(state, tile.colorGroup);
+  if (type === "SELL_BUILDING") {
+    if (holding.level <= 0) return "There are no buildings to sell.";
+    if (holding.level !== Math.max(...group.map((member) => player.properties[member.id]?.level ?? 0))) {
+      return "Sell buildings evenly across the set.";
+    }
+    const used = state.players.reduce((sum, owner) => sum + Object.values(owner.properties)
+      .reduce((n, asset) => n + (asset.level === 5 ? 0 : asset.level), 0), 0);
+    if (holding.level === 5 && state.settings.houseSupply - used < 4) {
+      return "The bank needs four houses before a hotel can be sold.";
+    }
+    return null;
+  }
+  if (!ownsFullGroup(state, player, tile.colorGroup)) return "Need the full colour set.";
+  if (group.some((member) => player.properties[member.id]?.mortgaged)) {
+    return "Unmortgage the colour set before building.";
+  }
+  if (holding.mortgaged) return "Unmortgage this property before building.";
+  if (player.cash < tile.houseCost) return "Not enough cash to build.";
+  if (type === "BUILD_HOUSE") {
+    if (holding.level >= 4) return "Build a hotel after four houses.";
+    if (holding.level !== Math.min(...group.map((member) => player.properties[member.id].level))) {
+      return "Build evenly across the set.";
+    }
+    const used = state.players.reduce((sum, owner) => sum + Object.values(owner.properties)
+      .reduce((n, asset) => n + (asset.level === 5 ? 0 : asset.level), 0), 0);
+    return used >= state.settings.houseSupply ? "No houses left in the bank." : null;
+  }
+  if (!group.every((member) => player.properties[member.id].level >= 4)) {
+    return "Every property needs four houses before a hotel.";
+  }
+  if (holding.level !== 4) return "This property needs four houses before a hotel.";
+  const hotels = state.players.reduce((sum, owner) =>
+    sum + Object.values(owner.properties).filter((asset) => asset.level === 5).length, 0);
+  return hotels >= state.settings.hotelSupply ? "No hotels left in the bank." : null;
+}
+
+export function getBuildingSupply(state: GameState): { houses: number; hotels: number } {
+  let housesUsed = 0;
+  let hotelsUsed = 0;
+  for (const player of state.players) {
+    for (const holding of Object.values(player.properties)) {
+      if (holding.level === 5) hotelsUsed += 1;
+      else housesUsed += holding.level;
+    }
+  }
+  return {
+    houses: state.settings.houseSupply - housesUsed,
+    hotels: state.settings.hotelSupply - hotelsUsed,
+  };
+}
+
 export function getAvailableActions(state: GameState): GameAction[] {
-  const player = state.players[state.currentPlayerIndex];
+  const actingPlayerId =
+    state.phase === "auction"
+      ? state.auction?.activePlayerId
+      : state.phase === "debt"
+        ? state.pendingDebt?.debtorId
+        : state.phase === "trade"
+          ? state.pendingTrade?.offer.toPlayerId
+          : state.players[state.currentPlayerIndex]?.id;
+  const player = state.players.find((candidate) => candidate.id === actingPlayerId);
   if (!player || player.bankrupt) return [];
 
   switch (state.phase) {
     case "roll":
-      return [{ type: "ROLL_DICE" }];
+      return [{ type: "ROLL_DICE" }, ...managementActions(state, player)];
     case "jail": {
       const actions: GameAction[] = [{ type: "ROLL_DICE" }];
       actions.push({ type: "PAY_JAIL_FINE" });
@@ -1069,46 +1469,43 @@ export function getAvailableActions(state: GameState): GameAction[] {
         (candidate) => candidate.id === state.auction?.activePlayerId,
       );
       if (!bidder) return [];
+      const bids = [...new Set([
+        state.auction.highBid + 1,
+        state.auction.highBid + 10,
+        state.auction.highBid + 50,
+        state.auction.highBid + 100,
+        bidder.cash,
+      ])]
+        .filter((amount) => amount > state.auction!.highBid && amount <= bidder.cash)
+        .map((amount) => ({ type: "AUCTION_BID" as const, amount }));
       return [
-        ...(bidder.cash > state.auction.highBid
-          ? [{ type: "AUCTION_BID" as const, amount: state.auction.highBid + 1 }]
-          : []),
+        ...bids,
         { type: "AUCTION_PASS" as const },
       ];
+    }
+    case "trade": {
+      const offer = state.pendingTrade?.offer;
+      if (!offer || offer.toPlayerId !== player.id) return [];
+      return [{ type: "ACCEPT_TRADE" }, { type: "REJECT_TRADE" }];
     }
     case "card":
       return state.pendingCard ? [{ type: "RESOLVE_CARD" }] : [];
     case "debt": {
       const debt = state.pendingDebt;
       if (!debt || debt.debtorId !== player.id) return [];
-      const mortgages = Object.entries(player.properties)
-        .filter(([tileId, holding]) => {
-          if (holding.mortgaged) return false;
-          const tile = getBuyableTile(state, tileId);
-          if (tile.type !== "property") return true;
-          return state.theme.tiles
-            .filter(
-              (candidate): candidate is Extract<Tile, { type: "property" }> =>
-                candidate.type === "property" &&
-                candidate.colorGroup === tile.colorGroup,
-            )
-            .every(
-              (member) =>
-                !player.properties[member.id] ||
-                player.properties[member.id].level === 0,
-            );
-        })
-        .map(([tileId]) => ({ type: "MORTGAGE" as const, tileId }));
+      const debtActions = managementActions(state, player).filter(
+        (action) => action.type === "MORTGAGE" || action.type === "SELL_BUILDING",
+      );
       return [
         ...(player.cash >= debt.amount
           ? [{ type: "PAY_DEBT" as const }]
           : []),
-        ...mortgages,
+        ...debtActions,
         { type: "DECLARE_BANKRUPTCY" },
       ];
     }
     case "endTurn":
-      return [{ type: "END_TURN" }];
+      return [{ type: "END_TURN" }, ...managementActions(state, player)];
     case "gameOver":
       return [];
   }
@@ -1159,6 +1556,14 @@ function reduceAction(state: GameState, action: GameAction): GameState {
       return payDebt(state);
     case "DECLARE_BANKRUPTCY":
       return bankrupt(state);
+    case "PROPOSE_TRADE":
+      return proposeTrade(state, action.offer);
+    case "COUNTER_TRADE":
+      return counterTrade(state, action.offer);
+    case "ACCEPT_TRADE":
+      return resolveTrade(state, true);
+    case "REJECT_TRADE":
+      return resolveTrade(state, false);
     case "END_TURN":
       return endTurn(state);
     case "UNDO":
@@ -1185,7 +1590,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   if (action.type === "UNDO") return undo(state);
   const before = snapshot(state);
   const reduced = reduceAction(state, action);
-  const player = state.players[state.currentPlayerIndex];
+  const player =
+    action.type === "COUNTER_TRADE" || action.type === "PROPOSE_TRADE"
+      ? state.players.find((candidate) => candidate.id === action.offer.fromPlayerId)
+      : action.type === "ACCEPT_TRADE" || action.type === "REJECT_TRADE"
+        ? state.players.find((candidate) => candidate.id === state.pendingTrade?.offer.toPlayerId)
+        : state.phase === "auction"
+          ? state.players.find((candidate) => candidate.id === state.auction?.activePlayerId)
+          : state.phase === "debt"
+            ? state.players.find((candidate) => candidate.id === state.pendingDebt?.debtorId)
+            : state.players[state.currentPlayerIndex];
   const logged = withEvent(reduced, action.type, player?.id ?? null, {
     ...(action.type === "AUCTION_BID" ? { amount: action.amount } : {}),
     ...("tileId" in action ? { tileId: action.tileId } : {}),

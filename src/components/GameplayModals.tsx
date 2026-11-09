@@ -6,7 +6,7 @@ import { getAvailableActions } from "../engine/gameReducer";
 interface GameplayModalsProps {
   state: GameState;
   busy: boolean;
-  onAction: (action: GameAction, sound?: "buy" | "cardFlip" | "jailDoor" | "coin" | "click") => void;
+  onAction: (action: GameAction, sound?: "buy" | "build" | "cardFlip" | "jailDoor" | "coin" | "click") => void;
 }
 
 export function GameplayModals({ state, busy, onAction }: GameplayModalsProps) {
@@ -187,22 +187,43 @@ export function GameplayModals({ state, busy, onAction }: GameplayModalsProps) {
         <Modal key="debt" label="Raise funds">
           <span className="eyebrow">Payment required</span>
           <h2>Raise funds</h2>
+          {(() => {
+            const debtor = state.players.find((player) => player.id === state.pendingDebt?.debtorId);
+            const creditor = state.players.find((player) => player.id === state.pendingDebt?.creditorId);
+            const cash = debtor?.cash ?? 0;
+            const shortfall = Math.max(0, state.pendingDebt.amount - cash);
+            return (
+              <>
           <p className="modal-description">
-            {state.players.find((player) => player.id === state.pendingDebt?.debtorId)?.name} needs{" "}
-            <strong>{currency(state.pendingDebt.amount, state)}</strong> for this payment.
+            {debtor?.name} owes <strong>{currency(state.pendingDebt.amount, state)}</strong>
+            {creditor ? ` to ${creditor.name}` : " to the bank"}.
           </p>
+          <div className={`debt-shortfall ${shortfall === 0 ? "debt-covered" : ""}`}>
+            <span>Cash available <b>{currency(cash, state)}</b></span>
+            <span>{shortfall === 0 ? "Covered" : `Shortfall ${currency(shortfall, state)}`}</span>
+          </div>
           <div className="debt-assets">
-            {Object.entries(state.players[state.currentPlayerIndex]?.properties ?? {}).map(([tileId, holding]) => {
+            {Object.entries(debtor?.properties ?? {}).map(([tileId, holding]) => {
               const asset = state.theme.tiles.find((candidate) => candidate.id === tileId);
-              const mortgageAction = actions.find(
-                (action) => action.type === "MORTGAGE" && action.tileId === tileId,
+              const liquidationAction = actions.find((action) =>
+                (action.type === "MORTGAGE" || action.type === "SELL_BUILDING") &&
+                action.tileId === tileId,
               );
+              const raises = liquidationAction?.type === "MORTGAGE"
+                ? (asset && "mortgageValue" in asset ? asset.mortgageValue : 0)
+                : asset && "houseCost" in asset ? Math.floor(asset.houseCost / 2) : 0;
               return (
                 <div className="debt-asset" key={tileId}>
-                  <span>{asset?.name} {holding.mortgaged ? "· Mortgaged" : ""}</span>
-                  {mortgageAction?.type === "MORTGAGE" ? (
-                    <button className="secondary-button" onClick={() => onAction(mortgageAction)}>
-                      Mortgage
+                  <span>{asset?.name} {holding.level > 0 ? `· level ${holding.level}` : ""} {holding.mortgaged ? "· Mortgaged" : ""}</span>
+                  {liquidationAction ? (
+                    <button
+                      className="secondary-button"
+                      onClick={() => onAction(
+                        liquidationAction,
+                        liquidationAction.type === "SELL_BUILDING" ? "build" : "coin",
+                      )}
+                    >
+                      {liquidationAction.type === "SELL_BUILDING" ? "Sell" : "Mortgage"} · +{currency(raises, state)}
                     </button>
                   ) : null}
                 </div>
@@ -210,15 +231,16 @@ export function GameplayModals({ state, busy, onAction }: GameplayModalsProps) {
             })}
           </div>
           <div className="modal-actions">
-            {can("PAY_DEBT") ? (
-              <button className="primary-button" onClick={() => onAction({ type: "PAY_DEBT" }, "coin")}>
-                Pay debt
-              </button>
-            ) : null}
+            <button className="primary-button" disabled={!can("PAY_DEBT")} onClick={() => onAction({ type: "PAY_DEBT" }, "coin")}>
+              Pay {currency(state.pendingDebt.amount, state)}
+            </button>
             <button className="secondary-button" onClick={() => onAction({ type: "DECLARE_BANKRUPTCY" }, "jailDoor")}>
               Declare bankruptcy
             </button>
           </div>
+              </>
+            );
+          })()}
         </Modal>
       ) : null}
 
@@ -227,6 +249,21 @@ export function GameplayModals({ state, busy, onAction }: GameplayModalsProps) {
           <span className="jail-bars" aria-hidden="true">▥</span>
           <span>Time-Out Office · Attempt {Math.min(state.players[state.currentPlayerIndex]?.jailTurns ?? 0, state.settings.maxJailTurns)} of {state.settings.maxJailTurns}</span>
         </div>
+      ) : null}
+
+      {state.phase === "gameOver" ? (
+        <Modal key="winner" label="Game winner">
+          <div className="winner-overlay">
+            <motion.div
+              className="winner-trophy"
+              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 18, rotate: -12, scale: 0.7 }}
+              animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+            >🏆</motion.div>
+            <span className="eyebrow">Business Tycoon champion</span>
+            <h2>{state.players.find((player) => player.id === state.winnerId)?.name ?? "Winner"}</h2>
+            <p>All rivals have left the market. The business empire is yours.</p>
+          </div>
+        </Modal>
       ) : null}
     </AnimatePresence>
   );

@@ -184,9 +184,16 @@ const MemoTileCard = memo(function TileCard({
         {price !== null ? <span className="tile-price">{formatPrice(price, currency)}</span> : null}
       </span>
       {unitCount > 0 ? (
-        <span className={`building-markers ${level === 5 ? "hotel-marker" : ""}`} aria-label={level === 5 ? "Hotel" : `${level} houses`}>
+        <motion.span
+          key={`${tile.id}-${level}`}
+          className={`building-markers ${level === 5 ? "hotel-marker" : ""}`}
+          aria-label={level === 5 ? "Hotel" : `${level} houses`}
+          initial={motionDisabled ? { opacity: 1 } : { opacity: 0, scale: 0.45, y: 3 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 360, damping: 17 }}
+        >
           {level === 5 ? "🏨" : Array.from({ length: unitCount }, (_, marker) => <i key={marker} />)}
-        </span>
+        </motion.span>
       ) : null}
       {tokens.length > 0 ? (
         <span className="token-stack">

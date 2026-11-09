@@ -10,11 +10,16 @@ import { GameplayModals } from "../components/GameplayModals";
 import { PlayerPanel } from "../components/PlayerPanel";
 import { tilePath } from "../components/boardLayout";
 import { AnimationQueue } from "../components/animationQueue";
+import { PropertyManagement } from "../components/PropertyManagement";
+import { TradeModal } from "../components/TradeModal";
+import { chooseBotAction, createBotRandom, getBotActor, isBotActionLegal } from "../engine/bots";
 import { useGameStore } from "../store/gameStore";
 
 const TOKEN_DESIGNS = ["🚗", "🎩", "🚢", "🐕", "🚀", "🦊"];
 
-export function GameScreen() {
+export type BotSpeed = "normal" | "fast" | "instant";
+
+export function GameScreen({ botSpeed = "normal" }: { botSpeed?: BotSpeed }) {
   const state = useGameStore((store) => store.state);
   const dispatch = useGameStore((store) => store.dispatch);
   const reducedMotion = useReducedMotion();
@@ -26,6 +31,9 @@ export function GameScreen() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [toast, setToast] = useState<{ id: number; text: string; tone: string } | null>(null);
   const [audioPreferences, setAudioPreferences] = useState(getAudioPreferences);
+  const [managementOpen, setManagementOpen] = useState(false);
+  const [tradeOpen, setTradeOpen] = useState(false);
+  const [thinkingId, setThinkingId] = useState<string | null>(null);
   const previousPositions = useRef<Record<string, number>>({});
   const previousEventId = useRef(0);
   const queue = useRef(new AnimationQueue());
@@ -133,10 +141,27 @@ export function GameScreen() {
     (action: GameAction, sound?: SoundId) => {
       playSound("click");
       if (sound) playSound(sound);
+      if (
+        action.type === "PROPOSE_TRADE" ||
+        action.type === "COUNTER_TRADE" ||
+        action.type === "ACCEPT_TRADE" ||
+        action.type === "REJECT_TRADE"
+      ) {
+        setTradeOpen(false);
+      }
       dispatch(action);
     },
     [dispatch],
   );
+  const botActor = state ? getBotActor(state) : null;
+  useBotTurn({
+    state,
+    actorId: botActor?.id ?? null,
+    isAnimating,
+    botSpeed,
+    dispatch,
+    onThinking: setThinkingId,
+  });
 
   const toggleMute = () => {
     setMuted(!audioPreferences.muted);
@@ -157,6 +182,8 @@ export function GameScreen() {
   const currentPlayer =
     state.players.find((player) => player.id === actingPlayerId) ??
     state.players[state.currentPlayerIndex];
+  const canManage = (state.phase === "roll" || state.phase === "endTurn") &&
+    !state.players[state.currentPlayerIndex]?.isBot;
   const jailReleased = state.eventLog
     .slice(-5)
     .some((event) => event.type === "JAIL_RELEASED");
@@ -223,6 +250,12 @@ export function GameScreen() {
                 index={index}
                 active={player.id === currentPlayer?.id}
                 currency={state.theme.currency}
+                manageable={
+                  canManage &&
+                  player.id === state.players[state.currentPlayerIndex]?.id
+                }
+                thinking={player.id === thinkingId}
+                onManage={() => setManagementOpen(true)}
               />
             ))}
           </section>
@@ -259,6 +292,16 @@ export function GameScreen() {
                 {state.dice?.isDouble ? "Roll again! " : "Roll Dice "}
                 <span aria-hidden="true">↗</span>
               </button>
+            ) : null}
+            {canManage ? (
+              <div className="phase5-actions">
+                <button className="secondary-button" onClick={() => setManagementOpen(true)}>
+                  Manage properties
+                </button>
+                <button className="secondary-button" onClick={() => setTradeOpen(true)}>
+                  Propose trade
+                </button>
+              </div>
             ) : null}
             {state.phase === "jail" ? (
               <div className="action-row">
@@ -314,7 +357,22 @@ export function GameScreen() {
         </aside>
       </div>
 
-      <GameplayModals state={state} busy={isAnimating} onAction={onAction} />
+      <GameplayModals state={state} busy={isAnimating || Boolean(botActor)} onAction={onAction} />
+      {managementOpen && canManage && currentPlayer ? (
+        <PropertyManagement
+          state={state}
+          player={currentPlayer}
+          onAction={onAction}
+          onClose={() => setManagementOpen(false)}
+        />
+      ) : null}
+      <TradeModal
+        state={state}
+        open={tradeOpen}
+        busy={isAnimating || Boolean(botActor)}
+        onAction={onAction}
+        onClose={() => setTradeOpen(false)}
+      />
       {toast ? (
         <motion.div
           key={toast.id}
@@ -383,6 +441,58 @@ export function GameScreen() {
       ) : null}
     </main>
   );
+}
+
+function useBotTurn({
+  state,
+  actorId,
+  isAnimating,
+  botSpeed,
+  dispatch,
+  onThinking,
+}: {
+  state: GameState | null;
+  actorId: string | null;
+  isAnimating: boolean;
+  botSpeed: BotSpeed;
+  dispatch: (action: GameAction) => void;
+  onThinking: (playerId: string | null) => void;
+}) {
+  const eventsKey = state?.eventLog.at(-1)?.id ?? 0;
+  const delay = botSpeed === "instant" ? 0 : botSpeed === "fast" ? 180 : 850;
+  useEffect(() => {
+    if (!state || !actorId || isAnimating) {
+      onThinking(null);
+      return;
+    }
+    const actor = state.players.find((player) => player.id === actorId);
+    if (!actor) return;
+    onThinking(actor.id);
+    const timer = setTimeout(() => {
+      const seed = state.rngState ^ (state.nextEventId * 0x45d9f3b) ^ state.turnNumber;
+      const action = chooseBotAction(
+        state,
+        actor.id,
+        actor.botDifficulty,
+        createBotRandom(seed),
+      );
+      if (!action) {
+        onThinking(null);
+        return;
+      }
+      if (!isBotActionLegal(state, action)) {
+        throw new Error(`Bot ${actor.name} selected an illegal action: ${JSON.stringify(action)}`);
+      }
+      playSound("click");
+      if (action.type === "BUILD_HOUSE" || action.type === "BUILD_HOTEL" || action.type === "SELL_BUILDING") {
+        playSound("build");
+      } else if (action.type === "MORTGAGE" || action.type === "UNMORTGAGE" || action.type === "PAY_DEBT") {
+        playSound("coin");
+      }
+      dispatch(action);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [actorId, delay, dispatch, eventsKey, isAnimating, onThinking, state]);
 }
 
 function phaseMessage(phase: string) {
@@ -521,7 +631,39 @@ function createEventJob(
     case "BANKRUPTCY":
       return async () => {
         playSound("bankruptcy");
-        await notify(`${playerName} has declared bankruptcy.`, "warning");
+        if (state.phase === "gameOver" && state.winnerId) {
+          playSound("win");
+          const winner = state.players.find((player) => player.id === state.winnerId);
+          await notify(`${playerName} is bankrupt. ${winner?.name ?? "A rival"} wins!`, "warning");
+        } else {
+          const propertyList = String(event.details.properties ?? "")
+            .split(",")
+            .filter(Boolean);
+          await notify(
+            `${playerName} is bankrupt. ${propertyList.length} asset(s) ${event.details.creditorId ? "transfer to the creditor" : "return to bank auction"}.`,
+            "warning",
+          );
+        }
+      };
+    case "TRADE_ACCEPTED":
+      return async () => {
+        playSound("coin");
+        await notify(`${playerName} completed a trade with ${event.details.partnerId ?? "a partner"}.`, "success");
+      };
+    case "TRADE_REJECTED":
+      return async () => {
+        await notify(`${playerName} declined the trade.`, "warning");
+      };
+    case "BUILD_HOUSE":
+    case "BUILD_HOTEL":
+      return async () => {
+        playSound("build");
+        await notify(`${playerName} upgraded ${event.details.tileId ?? "a property"}.`, "success");
+      };
+    case "SELL_BUILDING":
+      return async () => {
+        playSound("build");
+        await notify(`${playerName} sold a building at ${event.details.tileId ?? "a property"}.`, "tax");
       };
     default:
       return null;

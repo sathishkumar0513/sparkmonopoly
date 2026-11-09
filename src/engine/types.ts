@@ -4,6 +4,7 @@ export interface PlayerSetup {
   id: string;
   name: string;
   isBot?: boolean;
+  botDifficulty?: "easy" | "medium";
 }
 
 export interface GameOptions {
@@ -26,6 +27,7 @@ export interface Player {
   id: string;
   name: string;
   isBot: boolean;
+  botDifficulty: "easy" | "medium";
   cash: number;
   position: number;
   properties: Record<string, PropertyHolding>;
@@ -45,6 +47,7 @@ export type GamePhase =
   | "card"
   | "jail"
   | "debt"
+  | "trade"
   | "endTurn"
   | "gameOver";
 
@@ -75,6 +78,22 @@ export interface PendingCard {
   playerId: string;
 }
 
+export interface TradeOffer {
+  fromPlayerId: string;
+  toPlayerId: string;
+  cashFrom: number;
+  cashTo: number;
+  propertiesFrom: string[];
+  propertiesTo: string[];
+  jailCardsFrom: string[];
+  jailCardsTo: string[];
+}
+
+export interface PendingTrade {
+  offer: TradeOffer;
+  returnPhase: "roll" | "endTurn";
+}
+
 export interface GameEvent {
   id: number;
   type: string;
@@ -96,6 +115,8 @@ export interface UndoFrame {
   auction: AuctionState | null;
   pendingDebt: PendingDebt | null;
   pendingCard: PendingCard | null;
+  pendingTrade: PendingTrade | null;
+  bankAuctionQueue: string[];
   winnerId: string | null;
   freeParkingPot: number;
   afterLandingPhase: "roll" | "endTurn";
@@ -118,6 +139,8 @@ export interface GameState {
   auction: AuctionState | null;
   pendingDebt: PendingDebt | null;
   pendingCard: PendingCard | null;
+  pendingTrade: PendingTrade | null;
+  bankAuctionQueue: string[];
   winnerId: string | null;
   freeParkingPot: number;
   afterLandingPhase: "roll" | "endTurn";
@@ -142,6 +165,10 @@ export type GameAction =
   | { type: "RESOLVE_CARD" }
   | { type: "PAY_DEBT" }
   | { type: "DECLARE_BANKRUPTCY" }
+  | { type: "PROPOSE_TRADE"; offer: TradeOffer }
+  | { type: "ACCEPT_TRADE" }
+  | { type: "REJECT_TRADE" }
+  | { type: "COUNTER_TRADE"; offer: TradeOffer }
   | { type: "END_TURN" }
   | { type: "UNDO" };
 

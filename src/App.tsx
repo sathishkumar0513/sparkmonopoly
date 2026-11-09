@@ -1,29 +1,27 @@
-import { useEffect } from "react";
-import { GameScreen } from "./screens/GameScreen";
+import { lazy, Suspense, useState } from "react";
 import { useGameStore } from "./store/gameStore";
-import { createGame } from "./engine/gameReducer";
-import internationalTheme from "./themes/international.json";
+import type { BotSpeed } from "./screens/GameScreen";
+
+const GameScreen = lazy(() =>
+  import("./screens/GameScreen").then((module) => ({ default: module.GameScreen })),
+);
+const DevSetup = lazy(() =>
+  import("./screens/DevSetup").then((module) => ({ default: module.DevSetup })),
+);
 
 export default function App() {
   const game = useGameStore((store) => store.state);
   const startGame = useGameStore((store) => store.startGame);
+  const [botSpeed, setBotSpeed] = useState<BotSpeed>("normal");
 
-  useEffect(() => {
-    if (!game) {
-      startGame(
-        createGame(
-          internationalTheme,
-          [
-            { id: "player-1", name: "Alex" },
-            { id: "player-2", name: "Jordan" },
-            { id: "player-3", name: "Sam" },
-          ],
-          { seed: 20261109 },
-        ),
-      );
-    }
-  }, [game, startGame]);
-
-  if (!game) return <main className="loading-screen">Preparing the board…</main>;
-  return <GameScreen />;
+  return (
+    <Suspense fallback={<main className="loading-screen">Preparing the business table…</main>}>
+      {game
+        ? <GameScreen botSpeed={botSpeed} />
+        : <DevSetup onStart={(nextGame, speed) => {
+            setBotSpeed(speed);
+            startGame(nextGame);
+          }} />}
+    </Suspense>
+  );
 }

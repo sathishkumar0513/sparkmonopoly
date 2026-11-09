@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import internationalData from "../themes/international.json";
-import { applyCardEffect, calculateRent, createGame, gameReducer, getAvailableActions } from "./gameReducer";
+import {
+  applyCardEffect,
+  calculateRent,
+  createGame,
+  gameReducer,
+  getAvailableActions,
+  getBuildingSupply,
+  getManagementActionReason,
+  validateTrade,
+} from "./gameReducer";
 import { nextRandom } from "./random";
 import type { GameState, Player } from "./types";
 
@@ -119,6 +128,100 @@ describe("property management", () => {
     state = gameReducer(state, { type: "UNMORTGAGE", tileId: "harbor-labs" });
     expect(state.players[0].cash).toBe(initialCash - 3);
     expect(state.players[0].properties["harbor-labs"].mortgaged).toBe(false);
+  });
+
+  it("reports house and hotel supply limits and accurate action guidance", () => {
+    let state = withHoldings(makeGame(), "p1", {
+      "harbor-labs": { level: 1, mortgaged: false },
+      "copper-kite": { level: 0, mortgaged: false },
+    });
+    expect(getManagementActionReason(state, "p1", "harbor-labs", "BUILD_HOUSE"))
+      .toBe("Build evenly across the set.");
+    state = {
+      ...state,
+      settings: { ...state.settings, houseSupply: 0, hotelSupply: 0 },
+      players: state.players.map((player) =>
+        player.id === "p1"
+          ? {
+              ...player,
+              properties: {
+                ...player.properties,
+                "harbor-labs": { level: 0, mortgaged: false },
+                "copper-kite": { level: 0, mortgaged: false },
+              },
+            }
+          : player,
+      ),
+    };
+    expect(getManagementActionReason(state, "p1", "harbor-labs", "BUILD_HOUSE"))
+      .toBe("No houses left in the bank.");
+    const hotelState = withHoldings(makeGame(), "p1", {
+      "harbor-labs": { level: 4, mortgaged: false },
+      "copper-kite": { level: 4, mortgaged: false },
+    });
+    expect(getManagementActionReason(
+      { ...hotelState, settings: { ...hotelState.settings, hotelSupply: 0 } },
+      "p1",
+      "harbor-labs",
+      "BUILD_HOTEL",
+    )).toBe("No hotels left in the bank.");
+    expect(getBuildingSupply(hotelState)).toEqual({ houses: 24, hotels: 12 });
+    expect(() => gameReducer(state, { type: "BUILD_HOUSE", tileId: "harbor-labs" }))
+      .toThrow(/no houses available/);
+  });
+});
+
+describe("trading", () => {
+  const offer = {
+    fromPlayerId: "p1",
+    toPlayerId: "p2",
+    cashFrom: 25,
+    cashTo: 0,
+    propertiesFrom: ["harbor-labs"],
+    propertiesTo: ["northstar-rail"],
+    jailCardsFrom: [],
+    jailCardsTo: [],
+  };
+
+  it("validates and accepts a cash-and-property trade atomically", () => {
+    let state = withHoldings(withHoldings(makeGame(), "p1", {
+      "harbor-labs": { level: 0, mortgaged: false },
+    }), "p2", {
+      "northstar-rail": { level: 0, mortgaged: false },
+    });
+    expect(validateTrade(state, offer)).toEqual([]);
+    state = gameReducer(state, { type: "PROPOSE_TRADE", offer });
+    expect(state.phase).toBe("trade");
+    expect(getAvailableActions(state).map((action) => action.type)).toEqual([
+      "ACCEPT_TRADE",
+      "REJECT_TRADE",
+    ]);
+    state = gameReducer(state, { type: "ACCEPT_TRADE" });
+    expect(state.players[0].properties["northstar-rail"]).toBeDefined();
+    expect(state.players[0].properties["harbor-labs"]).toBeUndefined();
+    expect(state.players[0].cash).toBe(1475);
+    expect(state.players[1].cash).toBe(1525);
+    expect(state.phase).toBe("roll");
+  });
+
+  it("rejects trades that move a set with buildings or fail mortgage-interest checks", () => {
+    const developed = withHoldings(withHoldings(makeGame(), "p1", {
+      "harbor-labs": { level: 1, mortgaged: false },
+      "copper-kite": { level: 0, mortgaged: false },
+    }), "p2", {
+      "northstar-rail": { level: 0, mortgaged: false },
+    });
+    expect(validateTrade(developed, offer).join(" ")).toMatch(/Sell all buildings/);
+
+    let mortgaged = withHoldings(makeGame(), "p1", {
+      "harbor-labs": { level: 0, mortgaged: true },
+    });
+    mortgaged = withHoldings(mortgaged, "p2", {
+      "northstar-rail": { level: 0, mortgaged: false },
+    });
+    mortgaged = withPlayer(mortgaged, "p2", (player) => ({ ...player, cash: 0 }));
+    expect(validateTrade(mortgaged, { ...offer, cashFrom: 0 }).join(" "))
+      .toMatch(/needs more cash to accept mortgage interest/);
   });
 });
 
@@ -298,6 +401,38 @@ describe("bankruptcy and winner detection", () => {
     expect(state.players[1].bankrupt).toBe(true);
     expect(state.phase).toBe("gameOver");
     expect(state.winnerId).toBe("p1");
+  });
+
+  it("returns bank-creditor assets to auction and skips the eliminated player", () => {
+    let state = createGame(internationalData, [
+      { id: "p1", name: "Avery" },
+      { id: "p2", name: "Blake" },
+      { id: "p3", name: "Casey" },
+    ], { seed: 91234 });
+    state = withHoldings(state, "p2", {
+      "northstar-rail": { level: 0, mortgaged: false },
+      "harbor-labs": { level: 1, mortgaged: false },
+    });
+    state = {
+      ...state,
+      currentPlayerIndex: 1,
+      phase: "debt",
+      pendingDebt: {
+        debtorId: "p2",
+        creditorId: null,
+        amount: 2000,
+        reason: "tax",
+      },
+    };
+    state = withPlayer(state, "p2", (player) => ({ ...player, cash: 0 }));
+    state = gameReducer(state, { type: "DECLARE_BANKRUPTCY" });
+    expect(state.players[1].bankrupt).toBe(true);
+    expect(state.currentPlayerIndex).toBe(2);
+    expect(state.players[1].properties).toEqual({});
+    expect(state.phase).toBe("auction");
+    expect(state.auction?.tileId).toBe("northstar-rail");
+    expect(state.bankAuctionQueue).toContain("harbor-labs");
+    expect(state.players[2].id).toBe(state.auction?.activePlayerId);
   });
 });
 

@@ -15,9 +15,20 @@ interface PlayerPanelProps {
     format: "before" | "after";
     shortScale: { thousand: string; million: string; billion: string };
   };
+  manageable?: boolean;
+  thinking?: boolean;
+  onManage?: () => void;
 }
 
-export function PlayerPanel({ player, index, active, currency }: PlayerPanelProps) {
+export function PlayerPanel({
+  player,
+  index,
+  active,
+  currency,
+  manageable = false,
+  thinking = false,
+  onManage,
+}: PlayerPanelProps) {
   const reducedMotion = useReducedMotion();
   const cashValue = useMotionValue(player.cash);
   const cashSpring = useSpring(cashValue, { stiffness: 100, damping: 20 });
@@ -54,13 +65,25 @@ export function PlayerPanel({ player, index, active, currency }: PlayerPanelProp
       transition={{ duration: 1.8, repeat: active && !reducedMotion ? Infinity : 0 }}
       aria-current={active ? "step" : undefined}
     >
-      <div className="player-avatar">{TOKEN_DESIGNS[index % TOKEN_DESIGNS.length]}</div>
+      <motion.div
+        className="player-avatar"
+        animate={player.bankrupt && !reducedMotion ? { opacity: 0, scale: 1.8, rotate: 35, filter: "blur(5px)" } : undefined}
+        transition={{ duration: 0.7 }}
+      >
+        {TOKEN_DESIGNS[index % TOKEN_DESIGNS.length]}
+        {player.bankrupt ? <span className="shatter-spark">✦</span> : null}
+      </motion.div>
       <div className="player-info">
         <div className="player-name-row">
           <h3>{player.name}</h3>
-          {active ? <span className="active-badge">TURN</span> : null}
+          {thinking ? <span className="thinking-badge" aria-live="polite">thinking…</span> : active ? <span className="active-badge">TURN</span> : null}
         </div>
         <span className="player-assets">{ownedCount} assets · {player.isBot ? "AI" : "Player"}</span>
+        {manageable ? (
+          <div className="player-panel-actions">
+            <button type="button" className="panel-action" onClick={onManage}>Manage</button>
+          </div>
+        ) : null}
       </div>
       <div className="player-balance">
         <motion.span className="cash-number">{displayedCash}</motion.span>
@@ -76,6 +99,7 @@ export function PlayerPanel({ player, index, active, currency }: PlayerPanelProp
           </motion.span>
         ) : null}
       </div>
+      {player.bankrupt ? <span className="bankrupt-stamp">Bankrupt</span> : null}
     </motion.article>
   );
 }
