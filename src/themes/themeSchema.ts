@@ -53,6 +53,7 @@ export type Tile =
 
 export type CardEffect =
   | { type: "move"; destination: number; collectSalaryOnPass: boolean }
+  | { type: "moveRelative"; steps: number; collectSalaryOnPass: boolean }
   | { type: "pay" | "collect"; amount: number }
   | { type: "jail" | "getOutOfJailFree" }
   | { type: "repair"; houseCost: number; hotelCost: number }
@@ -191,6 +192,12 @@ function validateCard(value: unknown): value is ThemeCard {
       return (
         Number.isInteger(effect.destination) &&
         (effect.destination as number) >= 0 &&
+        typeof effect.collectSalaryOnPass === "boolean"
+      );
+    case "moveRelative":
+      return (
+        Number.isInteger(effect.steps) &&
+        effect.steps !== 0 &&
         typeof effect.collectSalaryOnPass === "boolean"
       );
     case "pay":

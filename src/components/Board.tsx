@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import type { CSSProperties } from "react";
-import type { GameState, Player } from "../engine/types";
+import type { GameState } from "../engine/types";
 import type { Tile } from "../themes/themeSchema";
 import { selectTileOwner } from "../store/gameStore";
 import { tileGridPosition } from "./boardLayout";
@@ -16,20 +16,23 @@ interface BoardProps {
   selectedTileId: string | null;
   onSelectTile: (tileId: string) => void;
   motionDisabled: boolean;
+  jailReleased: boolean;
 }
 
 interface TileCardProps {
   tile: Tile;
   index: number;
-  owner: Player | null;
+  ownerName: string | null;
   ownerIndex: number;
   level: number;
   mortgaged: boolean;
   selected: boolean;
-  tokens: { id: string; name: string; icon: string; color: string }[];
+  tokens: { id: string; name: string; icon: string; color: string; jailed: boolean }[];
   currency: GameState["theme"]["currency"];
   motionDisabled: boolean;
   goFlash: boolean;
+  jailBars: boolean;
+  jailReleased: boolean;
   onSelect: (tileId: string) => void;
 }
 
@@ -40,9 +43,13 @@ export function Board({
   selectedTileId,
   onSelectTile,
   motionDisabled,
+  jailReleased,
 }: BoardProps) {
+  const tokenKey = state.players
+    .map((player) => `${player.id}:${player.position}:${player.bankrupt}`)
+    .join("|");
   const tokensByTile = useMemo(() => {
-    const result = new Map<number, { id: string; name: string; icon: string; color: string }[]>();
+    const result = new Map<number, { id: string; name: string; icon: string; color: string; jailed: boolean }[]>();
     state.players.forEach((player, index) => {
       if (player.bankrupt) return;
       const position = visualPositions[player.id] ?? player.position;
@@ -52,11 +59,14 @@ export function Board({
         name: player.name,
         icon: TOKEN_DESIGNS[index % TOKEN_DESIGNS.length],
         color: PLAYER_COLORS[index % PLAYER_COLORS.length],
+        jailed:
+          player.id === state.players[state.currentPlayerIndex]?.id &&
+          state.phase === "jail",
       });
       result.set(position, tokens);
     });
     return result;
-  }, [state.players, visualPositions]);
+  }, [state.currentPlayerIndex, state.phase, tokenKey, visualPositions]);
 
   return (
     <div className={`board-frame ${state.phase === "roll" ? "board-frame-active" : ""}`}>
@@ -79,7 +89,7 @@ export function Board({
               key={tile.id}
               tile={tile}
               index={index}
-              owner={owner}
+              ownerName={owner?.name ?? null}
               ownerIndex={ownerIndex}
               level={holding?.level ?? 0}
               mortgaged={holding?.mortgaged ?? false}
@@ -88,6 +98,8 @@ export function Board({
               currency={state.theme.currency}
               motionDisabled={motionDisabled}
               goFlash={tile.type === "go" && goFlash}
+              jailBars={tile.type === "jail" && state.phase === "jail"}
+              jailReleased={tile.type === "jail" && jailReleased}
               onSelect={onSelectTile}
             />
           );
@@ -115,7 +127,7 @@ const EMPTY_TOKENS: TileCardProps["tokens"] = [];
 const MemoTileCard = memo(function TileCard({
   tile,
   index,
-  owner,
+  ownerName,
   ownerIndex,
   level,
   mortgaged,
@@ -124,6 +136,8 @@ const MemoTileCard = memo(function TileCard({
   currency,
   motionDisabled,
   goFlash,
+  jailBars,
+  jailReleased,
   onSelect,
 }: TileCardProps) {
   const position = tileGridPosition(index);
@@ -144,17 +158,23 @@ const MemoTileCard = memo(function TileCard({
         "--owner-color": ownerIndex >= 0 ? PLAYER_COLORS[ownerIndex % PLAYER_COLORS.length] : "transparent",
       } as CSSProperties}
       onClick={() => onSelect(tile.id)}
-      aria-label={`${tile.name}${price === null ? "" : `, price ${price}`}${owner ? `, owned by ${owner.name}` : ""}`}
+      aria-label={`${tile.name}${price === null ? "" : `, price ${formatPrice(price, currency)}`}${ownerName ? `, owned by ${ownerName}` : ""}`}
       aria-pressed={selected}
       whileHover={motionDisabled ? undefined : { y: -3, scale: 1.035 }}
       whileTap={motionDisabled ? undefined : { scale: 0.97 }}
       transition={{ duration: 0.15 }}
     >
       {tile.type === "property" ? <span className="tile-color-band" /> : null}
+      {jailBars || jailReleased ? (
+        <span
+          className={`jail-bars-overlay ${jailBars ? "jail-bars-closed" : "jail-bars-opening"}`}
+          aria-hidden="true"
+        />
+      ) : null}
       {goFlash && tile.type === "go" ? (
         <span className="go-salary-pop" aria-label="Salary collected">+${tile.salary}</span>
       ) : null}
-      {owner ? <span className="owner-flag" title={`Owned by ${owner.name}`} /> : null}
+      {ownerName ? <span className="owner-flag" title={`Owned by ${ownerName}`} /> : null}
       {mortgaged ? <span className="mortgage-mark" aria-label="Mortgaged">M</span> : null}
       <span className={`tile-content ${position.side !== "corner" ? `tile-content-${position.side}` : ""}`}>
         <span className="tile-icon" aria-hidden="true">
@@ -181,16 +201,20 @@ const MemoTileCard = memo(function TileCard({
               } as CSSProperties}
               title={token.name}
               aria-label={`${token.name}'s token`}
+              layout
+              layoutId={`player-token-${token.id}`}
               animate={
                 motionDisabled
                   ? { opacity: 1 }
-                  : tokenIndex === 0
+                  : token.jailed
+                    ? { x: [0, -2, 2, -2, 0], rotate: [0, -2, 2, -2, 0] }
+                    : tokenIndex === 0
                     ? { y: [0, -4, 0], scaleY: [1, 0.88, 1.08] }
                     : { y: [0, -2, 0] }
               }
               transition={{
-                duration: motionDisabled ? 0.01 : 0.42,
-                repeat: motionDisabled ? 0 : 1,
+                duration: motionDisabled ? 0.01 : token.jailed ? 0.45 : 0.42,
+                repeat: motionDisabled ? 0 : token.jailed ? Infinity : 1,
                 ease: "easeOut",
               }}
             >

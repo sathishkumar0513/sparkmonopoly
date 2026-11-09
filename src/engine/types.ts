@@ -42,6 +42,7 @@ export type GamePhase =
   | "roll"
   | "purchase"
   | "auction"
+  | "card"
   | "jail"
   | "debt"
   | "endTurn"
@@ -68,6 +69,12 @@ export interface PendingDebt {
   reason: string;
 }
 
+export interface PendingCard {
+  deck: "chance" | "communityChest";
+  cardId: string;
+  playerId: string;
+}
+
 export interface GameEvent {
   id: number;
   type: string;
@@ -88,6 +95,7 @@ export interface UndoFrame {
   pendingPurchase: string | null;
   auction: AuctionState | null;
   pendingDebt: PendingDebt | null;
+  pendingCard: PendingCard | null;
   winnerId: string | null;
   freeParkingPot: number;
   afterLandingPhase: "roll" | "endTurn";
@@ -109,6 +117,7 @@ export interface GameState {
   pendingPurchase: string | null;
   auction: AuctionState | null;
   pendingDebt: PendingDebt | null;
+  pendingCard: PendingCard | null;
   winnerId: string | null;
   freeParkingPot: number;
   afterLandingPhase: "roll" | "endTurn";
@@ -130,6 +139,7 @@ export type GameAction =
   | { type: "UNMORTGAGE"; tileId: string }
   | { type: "PAY_JAIL_FINE" }
   | { type: "USE_JAIL_CARD" }
+  | { type: "RESOLVE_CARD" }
   | { type: "PAY_DEBT" }
   | { type: "DECLARE_BANKRUPTCY" }
   | { type: "END_TURN" }

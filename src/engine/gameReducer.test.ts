@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import internationalData from "../themes/international.json";
-import { applyCardEffect, calculateRent, createGame, gameReducer } from "./gameReducer";
+import { applyCardEffect, calculateRent, createGame, gameReducer, getAvailableActions } from "./gameReducer";
 import { nextRandom } from "./random";
 import type { GameState, Player } from "./types";
 
@@ -123,6 +123,18 @@ describe("property management", () => {
 });
 
 describe("jail", () => {
+  function seedForDouble(): number {
+    let seed = 1;
+    while (true) {
+      const first = nextRandom(seed);
+      const second = nextRandom(first.state);
+      if (Math.floor(first.value * 6) === Math.floor(second.value * 6)) {
+        return seed;
+      }
+      seed += 1;
+    }
+  }
+
   it("allows paying the fine or using a held release card", () => {
     const inJail = withPlayer(
       { ...makeGame(), phase: "jail" },
@@ -137,6 +149,36 @@ describe("jail", () => {
     expect(released.phase).toBe("roll");
     expect(released.players[0].jailCards).toEqual([]);
     expect(released.discards.chance).toContain("chance-release");
+  });
+
+  it("releases a jailed player who rolls doubles and sends a third-double roller to jail", () => {
+    let inJail: GameState = {
+      ...makeGame(),
+      phase: "jail",
+      rngState: seedForDouble(),
+    };
+    inJail = withPlayer(inJail, "p1", (player) => ({
+      ...player,
+      position: 10,
+      jailTurns: 1,
+    }));
+    const released = gameReducer(inJail, { type: "ROLL_DICE" });
+    expect(released.players[0].jailTurns).toBe(0);
+    expect(released.players[0].position).not.toBe(10);
+    expect(released.eventLog.some(
+      (event) => event.type === "JAIL_RELEASED" && event.details.method === "doubles",
+    )).toBe(true);
+
+    const thirdDouble: GameState = {
+      ...makeGame(),
+      phase: "roll",
+      consecutiveDoubles: 2,
+      rngState: seedForDouble(),
+    };
+    const jailed = gameReducer(thirdDouble, { type: "ROLL_DICE" });
+    expect(jailed.phase).toBe("jail");
+    expect(jailed.players[0].position).toBe(10);
+    expect(jailed.eventLog.some((event) => event.type === "SPEEDING")).toBe(true);
   });
 
   it("charges the fine and releases a player after the third failed jail roll", () => {
@@ -166,6 +208,39 @@ describe("jail", () => {
     expect(state.players[0].cash).toBe(1450);
     expect(state.players[0].jailTurns).toBe(0);
     expect(state.players[0].position).not.toBe(10);
+    expect(state.eventLog.some(
+      (event) => event.type === "JAIL_RELEASED" && event.details.method === "third-roll-fine",
+    )).toBe(true);
+  });
+
+  it("allows a player to mortgage assets before paying a jail fine", () => {
+    let state: GameState = {
+      ...withHoldings(makeGame(), "p1", {
+        "harbor-labs": { level: 0, mortgaged: false },
+        "copper-kite": { level: 0, mortgaged: false },
+      }),
+      phase: "debt",
+      pendingDebt: {
+        debtorId: "p1",
+        creditorId: null,
+        amount: 50,
+        reason: "jail-fine",
+      },
+    };
+    state = withPlayer(state, "p1", (player) => ({
+      ...player,
+      cash: 0,
+      jailTurns: 1,
+    }));
+    state = gameReducer(state, { type: "MORTGAGE", tileId: "harbor-labs" });
+    state = gameReducer(state, { type: "MORTGAGE", tileId: "copper-kite" });
+    state = gameReducer(state, { type: "PAY_DEBT" });
+    expect(state.phase).toBe("roll");
+    expect(state.players[0].cash).toBe(10);
+    expect(state.players[0].jailTurns).toBe(0);
+    expect(state.eventLog.some(
+      (event) => event.type === "JAIL_RELEASED" && event.details.method === "fine",
+    )).toBe(true);
   });
 });
 
@@ -251,12 +326,96 @@ describe("card effects and reproducibility", () => {
     expect(state.players[0].position).toBe(0);
   });
 
+  it("moves relative cards backward from the player's current tile", () => {
+    let state = withPlayer(makeGame(), "p1", (player) => ({
+      ...player,
+      position: 17,
+    }));
+    state = applyCardEffect(state, "p1", {
+      id: "chance-move-back",
+      text: "Move back three spaces.",
+      effect: { type: "moveRelative", steps: -3, collectSalaryOnPass: false },
+    });
+    expect(state.players[0].position).toBe(14);
+    expect(state.phase).toBe("purchase");
+    expect(state.pendingPurchase).toBe("summit-capital");
+  });
+
   it("produces the same dice and movement for identical seeds", () => {
     const first = gameReducer(makeGame(), { type: "ROLL_DICE" });
     const second = gameReducer(makeGame(), { type: "ROLL_DICE" });
     expect(first.dice).toEqual(second.dice);
     expect(first.players.map((player) => player.position)).toEqual(
       second.players.map((player) => player.position),
+    );
+  });
+
+  it("waits for card acknowledgement before applying a drawn effect", () => {
+    let seed = 1;
+    let state: GameState;
+    while (true) {
+      state = createGame(
+        internationalData,
+        [
+          { id: "p1", name: "Avery" },
+          { id: "p2", name: "Blake" },
+        ],
+        { seed },
+      );
+      const first = nextRandom(state.rngState);
+      const second = nextRandom(first.state);
+      if (Math.floor(first.value * 6) + Math.floor(second.value * 6) + 2 === 2) {
+        break;
+      }
+      seed += 1;
+    }
+
+    state = gameReducer(state, { type: "ROLL_DICE" });
+    expect(state.phase).toBe("card");
+    expect(state.pendingCard).not.toBeNull();
+    expect(state.players[0].position).toBe(2);
+    expect(getAvailableActions(state)).toEqual([{ type: "RESOLVE_CARD" }]);
+    const resolved = gameReducer(state, { type: "RESOLVE_CARD" });
+    expect(resolved.pendingCard).toBeNull();
+    expect(resolved.eventLog.at(-1)?.type).toBe("RESOLVE_CARD");
+  });
+});
+
+describe("available actions", () => {
+  it("exposes only the active bidder's legal auction actions", () => {
+    const state: GameState = {
+      ...makeGame(),
+      phase: "auction",
+      auction: {
+        tileId: "harbor-labs",
+        highBid: 40,
+        highBidderId: "p1",
+        activePlayerId: "p2",
+        passedPlayerIds: [],
+      },
+    };
+    expect(getAvailableActions(state)).toContainEqual({
+      type: "AUCTION_BID",
+      amount: 41,
+    });
+    expect(getAvailableActions(state)).toContainEqual({ type: "AUCTION_PASS" });
+  });
+
+  it("offers a jail card only to a player who has one", () => {
+    const state: GameState = {
+      ...makeGame(),
+      phase: "jail",
+    };
+    expect(getAvailableActions(state).map((action) => action.type)).toEqual([
+      "ROLL_DICE",
+      "PAY_JAIL_FINE",
+    ]);
+    const heldCard = withPlayer(state, "p1", (player) => ({
+      ...player,
+      jailCards: ["chance-release"],
+    }));
+    expect(getAvailableActions(heldCard).map((action) => action.type)).toContain(
+      "USE_JAIL_CARD",
     );
   });
 });

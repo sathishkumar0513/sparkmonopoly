@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useMotionValueEvent, useReducedMotion, useSpring } from "framer-motion";
 import type { CSSProperties } from "react";
 import type { Player } from "../engine/types";
 
@@ -21,20 +21,29 @@ export function PlayerPanel({ player, index, active, currency }: PlayerPanelProp
   const reducedMotion = useReducedMotion();
   const cashValue = useMotionValue(player.cash);
   const cashSpring = useSpring(cashValue, { stiffness: 100, damping: 20 });
-  const displayedCash = useTransform(cashSpring, (value) => formatMoney(Math.round(value), currency));
+  const [displayedCash, setDisplayedCash] = useState(() =>
+    formatMoney(player.cash, currency),
+  );
   const previousCash = useRef(player.cash);
   const [change, setChange] = useState<number | null>(null);
+
+  useMotionValueEvent(cashSpring, "change", (value) => {
+    setDisplayedCash(formatMoney(Math.round(value), currency));
+  });
 
   useEffect(() => {
     const delta = player.cash - previousCash.current;
     if (delta !== 0) setChange(delta);
     previousCash.current = player.cash;
+    if (reducedMotion) {
+      setDisplayedCash(formatMoney(player.cash, currency));
+    }
     cashValue.set(player.cash);
     if (delta !== 0) {
       const timeout = setTimeout(() => setChange(null), 1200);
       return () => clearTimeout(timeout);
     }
-  }, [cashValue, player.cash]);
+  }, [cashValue, currency, player.cash, reducedMotion]);
 
   const ownedCount = Object.keys(player.properties).length;
   return (

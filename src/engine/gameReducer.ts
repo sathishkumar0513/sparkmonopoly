@@ -8,6 +8,7 @@ import type {
   GameEvent,
   GameOptions,
   GameState,
+  PendingCard,
   Player,
   PlayerSetup,
   PropertyHolding,
@@ -70,6 +71,7 @@ function snapshot(state: GameState): UndoFrame {
     pendingPurchase: state.pendingPurchase,
     auction: state.auction,
     pendingDebt: state.pendingDebt,
+    pendingCard: state.pendingCard,
     winnerId: state.winnerId,
     freeParkingPot: state.freeParkingPot,
     afterLandingPhase: state.afterLandingPhase,
@@ -186,6 +188,7 @@ export function createGame(
     pendingPurchase: null,
     auction: null,
     pendingDebt: null,
+    pendingCard: null,
     winnerId: null,
     freeParkingPot: 0,
     afterLandingPhase: "endTurn",
@@ -274,11 +277,11 @@ function transfer(
   assertRule(amount >= 0, "A payment cannot be negative.");
   const payer = getPlayer(state, payerId);
   if (payer.cash < amount) {
-    return {
+    return withEvent({
       ...state,
       phase: "debt",
       pendingDebt: { debtorId: payerId, creditorId, amount, reason },
-    };
+    }, "PAYMENT_DUE", payerId, { amount, creditorId, reason });
   }
 
   let next = updatePlayer(state, payerId, (player) => ({
@@ -303,6 +306,11 @@ function transfer(
   } else if (addToPot && next.settings.freeParkingJackpot) {
     next = { ...next, freeParkingPot: next.freeParkingPot + amount };
   }
+  next = withEvent(next, creditorId ? "RENT_PAID" : "PAYMENT_MADE", payerId, {
+    amount,
+    creditorId,
+    reason,
+  });
   return next;
 }
 
@@ -310,10 +318,11 @@ function collectSalary(state: GameState, playerId: string): GameState {
   const go = state.theme.tiles.find((tile) => tile.type === "go");
   assertRule(go?.type === "go", "Theme must contain a Launch Pad tile.");
   const amount = go.salary * (state.settings.doubleSalaryOnGo ? 2 : 1);
-  return updatePlayer(state, playerId, (player) => ({
+  const next = updatePlayer(state, playerId, (player) => ({
     ...player,
     cash: player.cash + amount,
   }));
+  return withEvent(next, "SALARY_COLLECTED", playerId, { amount });
 }
 
 function sendToJail(state: GameState, playerId: string): GameState {
@@ -326,6 +335,7 @@ function sendToJail(state: GameState, playerId: string): GameState {
       consecutiveDoubles: 0,
       pendingPurchase: null,
       auction: null,
+      pendingCard: null,
       afterLandingPhase: "endTurn",
     },
     playerId,
@@ -334,7 +344,7 @@ function sendToJail(state: GameState, playerId: string): GameState {
 }
 
 function finishLanding(state: GameState): GameState {
-  if (state.phase === "purchase" || state.phase === "auction" || state.phase === "debt" || state.phase === "jail" || state.phase === "gameOver") {
+  if (state.phase === "purchase" || state.phase === "auction" || state.phase === "card" || state.phase === "debt" || state.phase === "jail" || state.phase === "gameOver") {
     return state;
   }
   return { ...state, phase: state.afterLandingPhase };
@@ -375,7 +385,16 @@ function drawCard(
     cardId,
     text: card.text,
   });
-  return applyCardEffect(next, playerId, card, depth);
+  const pendingCard: PendingCard = {
+    deck: deckName,
+    cardId,
+    playerId,
+  };
+  return {
+    ...next,
+    phase: "card",
+    pendingCard,
+  };
 }
 
 export function applyCardEffect(
@@ -423,8 +442,29 @@ export function applyCardEffect(
       next = resolveLanding(next, playerId, depth + 1);
       break;
     }
+    case "moveRelative": {
+      const player = getPlayer(next, playerId);
+      const boardSize = next.theme.tiles.length;
+      const destination =
+        ((player.position + effect.steps) % boardSize + boardSize) % boardSize;
+      const passedGo =
+        effect.steps > 0 &&
+        player.position + effect.steps >= boardSize &&
+        effect.collectSalaryOnPass;
+      next = updatePlayer(next, playerId, (current) => ({
+        ...current,
+        position: destination,
+      }));
+      if (passedGo) next = collectSalary(next, playerId);
+      next = resolveLanding(next, playerId, depth + 1);
+      break;
+    }
     case "jail":
       next = sendToJail(next, playerId);
+      next = withEvent(next, "JAIL_ENTERED", playerId, {
+        reason: "card",
+        cardId: card.id,
+      });
       break;
     case "getOutOfJailFree":
       next = updatePlayer(next, playerId, (player) => ({
@@ -477,13 +517,24 @@ function resolveLanding(
     }
     if (owner.id !== playerId) {
       const amount = calculateRent(next, tile.id, owner.id);
+      next = withEvent(next, "RENT_DUE", playerId, {
+        amount,
+        creditorId: owner.id,
+        tileId: tile.id,
+      });
       next = transfer(next, playerId, amount, owner.id, tile.id);
     }
   } else if (tile.type === "goToJail") {
-    return sendToJail(next, playerId);
+    next = sendToJail(next, playerId);
+    return withEvent(next, "JAIL_ENTERED", playerId, { reason: "go-to-jail" });
   } else if (tile.type === "chance" || tile.type === "communityChest") {
     next = drawCard(next, playerId, tile.type);
   } else if (tile.type === "incomeTax" || tile.type === "luxuryTax") {
+    next = withEvent(next, "TAX_DUE", playerId, {
+      amount: tile.amount,
+      tileId: tile.id,
+      name: tile.name,
+    });
     next = transfer(next, playerId, tile.amount, null, tile.id, true);
   } else if (tile.type === "freeParking" && next.settings.freeParkingJackpot) {
     const amount = next.freeParkingPot;
@@ -535,6 +586,7 @@ function roll(state: GameState): GameState {
         jailTurns: 0,
       }));
       next = { ...next, phase: "roll", afterLandingPhase: "endTurn" };
+      next = withEvent(next, "JAIL_RELEASED", player.id, { method: "doubles" });
       return moveBy(next, player.id, total);
     }
     const turns = player.jailTurns + 1;
@@ -545,21 +597,27 @@ function roll(state: GameState): GameState {
     if (turns < state.settings.maxJailTurns) {
       return { ...next, phase: "jail" };
     }
-    next = transfer(next, player.id, state.settings.jailFine, null, "jail-fine");
+    next = transfer(next, player.id, state.settings.jailFine, null, "jail-fine-roll");
     if (next.phase === "debt") return next;
     next = updatePlayer(next, player.id, (current) => ({
       ...current,
       jailTurns: 0,
     }));
     next = { ...next, phase: "roll", afterLandingPhase: "endTurn" };
+    next = withEvent(next, "JAIL_RELEASED", player.id, {
+      method: "third-roll-fine",
+    });
     return moveBy(next, player.id, total);
   }
 
   if (isDouble && state.consecutiveDoubles === 2) {
-    return sendToJail(
+    const jailed = sendToJail(
       { ...next, phase: "jail", consecutiveDoubles: 0 },
       player.id,
     );
+    return withEvent(jailed, "SPEEDING", player.id, {
+      reason: "three-doubles",
+    });
   }
   const doubles = isDouble ? state.consecutiveDoubles + 1 : 0;
   next = { ...next, consecutiveDoubles: doubles };
@@ -592,7 +650,10 @@ function buyProperty(state: GameState): GameState {
     phase: state.afterLandingPhase,
     pendingPurchase: null,
   };
-  return next;
+  return withEvent(next, "PROPERTY_BOUGHT", player.id, {
+    tileId: tile.id,
+    price: tile.price,
+  });
 }
 
 function nextAuctionPlayer(state: GameState, auction: AuctionState): string | null {
@@ -624,6 +685,10 @@ function finishAuction(state: GameState, auction: AuctionState): GameState {
         [tile.id]: { level: 0, mortgaged: false },
       },
     }));
+    next = withEvent(next, "AUCTION_WON", auction.highBidderId, {
+      tileId: tile.id,
+      amount: auction.highBid,
+    });
   }
   return { ...next, phase: next.afterLandingPhase };
 }
@@ -840,6 +905,28 @@ function payDebt(state: GameState): GameState {
   assertRule(getPlayer(state, debt.debtorId).cash >= debt.amount, "There is not enough cash to settle this debt.");
   let next = transfer(state, debt.debtorId, debt.amount, debt.creditorId, debt.reason);
   next = { ...next, pendingDebt: null, phase: state.afterLandingPhase };
+  if (debt.reason === "jail-fine-roll") {
+    next = updatePlayer(next, debt.debtorId, (player) => ({
+      ...player,
+      jailTurns: 0,
+    }));
+    next = { ...next, phase: "roll", afterLandingPhase: "endTurn" };
+    next = withEvent(next, "JAIL_RELEASED", debt.debtorId, {
+      method: "third-roll-fine",
+    });
+    const diceTotal = (next.dice?.first ?? 0) + (next.dice?.second ?? 0);
+    return moveBy(next, debt.debtorId, diceTotal);
+  }
+  if (debt.reason === "jail-fine") {
+    next = updatePlayer(next, debt.debtorId, (player) => ({
+      ...player,
+      jailTurns: 0,
+    }));
+    next = { ...next, phase: "roll", afterLandingPhase: "endTurn" };
+    return withEvent(next, "JAIL_RELEASED", debt.debtorId, {
+      method: "fine",
+    });
+  }
   return next;
 }
 
@@ -875,6 +962,10 @@ function bankrupt(state: GameState): GameState {
     phase: winnerId ? "gameOver" : state.afterLandingPhase,
     winnerId,
   };
+  next = withEvent(next, "BANKRUPTCY", debtor.id, {
+    creditorId: creditor?.id ?? null,
+    amount: debt.amount,
+  });
   if (!winnerId) {
     const nextIndex = next.players.findIndex(
       (player) =>
@@ -901,7 +992,8 @@ function payJailFine(state: GameState): GameState {
     ...current,
     jailTurns: 0,
   }));
-  return { ...next, phase: "roll", afterLandingPhase: "endTurn" };
+  next = { ...next, phase: "roll", afterLandingPhase: "endTurn" };
+  return withEvent(next, "JAIL_RELEASED", player.id, { method: "fine" });
 }
 
 function useJailCard(state: GameState): GameState {
@@ -924,7 +1016,7 @@ function useJailCard(state: GameState): GameState {
       [deckName]: [...next.discards[deckName], cardId],
     },
   };
-  return next;
+  return withEvent(next, "JAIL_RELEASED", player.id, { method: "card" });
 }
 
 function endTurn(state: GameState): GameState {
@@ -948,6 +1040,78 @@ function endTurn(state: GameState): GameState {
     auction: null,
     undoFrames: [],
   };
+}
+
+export function getAvailableActions(state: GameState): GameAction[] {
+  const player = state.players[state.currentPlayerIndex];
+  if (!player || player.bankrupt) return [];
+
+  switch (state.phase) {
+    case "roll":
+      return [{ type: "ROLL_DICE" }];
+    case "jail": {
+      const actions: GameAction[] = [{ type: "ROLL_DICE" }];
+      actions.push({ type: "PAY_JAIL_FINE" });
+      if (player.jailCards.length > 0) actions.push({ type: "USE_JAIL_CARD" });
+      return actions;
+    }
+    case "purchase": {
+      if (!state.pendingPurchase) return [];
+      const tile = getBuyableTile(state, state.pendingPurchase);
+      return [
+        ...(player.cash >= tile.price ? [{ type: "BUY_PROPERTY" as const }] : []),
+        { type: "DECLINE_PURCHASE" },
+      ];
+    }
+    case "auction": {
+      if (!state.auction) return [];
+      const bidder = state.players.find(
+        (candidate) => candidate.id === state.auction?.activePlayerId,
+      );
+      if (!bidder) return [];
+      return [
+        ...(bidder.cash > state.auction.highBid
+          ? [{ type: "AUCTION_BID" as const, amount: state.auction.highBid + 1 }]
+          : []),
+        { type: "AUCTION_PASS" as const },
+      ];
+    }
+    case "card":
+      return state.pendingCard ? [{ type: "RESOLVE_CARD" }] : [];
+    case "debt": {
+      const debt = state.pendingDebt;
+      if (!debt || debt.debtorId !== player.id) return [];
+      const mortgages = Object.entries(player.properties)
+        .filter(([tileId, holding]) => {
+          if (holding.mortgaged) return false;
+          const tile = getBuyableTile(state, tileId);
+          if (tile.type !== "property") return true;
+          return state.theme.tiles
+            .filter(
+              (candidate): candidate is Extract<Tile, { type: "property" }> =>
+                candidate.type === "property" &&
+                candidate.colorGroup === tile.colorGroup,
+            )
+            .every(
+              (member) =>
+                !player.properties[member.id] ||
+                player.properties[member.id].level === 0,
+            );
+        })
+        .map(([tileId]) => ({ type: "MORTGAGE" as const, tileId }));
+      return [
+        ...(player.cash >= debt.amount
+          ? [{ type: "PAY_DEBT" as const }]
+          : []),
+        ...mortgages,
+        { type: "DECLARE_BANKRUPTCY" },
+      ];
+    }
+    case "endTurn":
+      return [{ type: "END_TURN" }];
+    case "gameOver":
+      return [];
+  }
 }
 
 function reduceAction(state: GameState, action: GameAction): GameState {
@@ -977,6 +1141,20 @@ function reduceAction(state: GameState, action: GameAction): GameState {
       return payJailFine(state);
     case "USE_JAIL_CARD":
       return useJailCard(state);
+    case "RESOLVE_CARD": {
+      const pending = state.pendingCard;
+      assertRule(state.phase === "card" && pending, "There is no card awaiting resolution.");
+      const card = state.theme.cards[pending.deck].find(
+        (candidate) => candidate.id === pending.cardId,
+      );
+      assertRule(card, `Unknown card id: ${pending.cardId}`);
+      const ready: GameState = {
+        ...state,
+        phase: state.afterLandingPhase,
+        pendingCard: null,
+      };
+      return applyCardEffect(ready, pending.playerId, card);
+    }
     case "PAY_DEBT":
       return payDebt(state);
     case "DECLARE_BANKRUPTCY":
@@ -1011,6 +1189,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   const logged = withEvent(reduced, action.type, player?.id ?? null, {
     ...(action.type === "AUCTION_BID" ? { amount: action.amount } : {}),
     ...("tileId" in action ? { tileId: action.tileId } : {}),
+    ...(action.type === "ROLL_DICE" && reduced.dice
+      ? {
+          first: reduced.dice.first,
+          second: reduced.dice.second,
+          isDouble: reduced.dice.isDouble,
+        }
+      : {}),
   });
   if (action.type === "END_TURN") return { ...logged, undoFrames: [] };
   return { ...logged, undoFrames: [...state.undoFrames, before] };

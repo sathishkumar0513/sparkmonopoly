@@ -68,7 +68,7 @@
       { "id": "chance-move-air", "text": "Catch an early flight to Blue Coast Air.", "effect": { "type": "move", "destination": 15, "collectSalaryOnPass": true } },
       { "id": "chance-move-rail", "text": "Ride the express to Northstar Rail.", "effect": { "type": "move", "destination": 5, "collectSalaryOnPass": true } },
       { "id": "chance-move-cobalt", "text": "A product launch brings you to Cobalt Mobile.", "effect": { "type": "move", "destination": 24, "collectSalaryOnPass": true } },
-      { "id": "chance-move-back", "text": "A calendar mix-up sends you back three spaces.", "effect": { "type": "move", "destination": 33, "collectSalaryOnPass": false } },
+      { "id": "chance-move-back", "text": "A calendar mix-up sends you back three spaces.", "effect": { "type": "moveRelative", "steps": -3, "collectSalaryOnPass": false } },
       { "id": "chance-collect-award", "text": "Your team earns an innovation award. Collect $100.", "effect": { "type": "collect", "amount": 100 } },
       { "id": "chance-collect-dividend", "text": "A successful quarter brings a dividend. Collect $50.", "effect": { "type": "collect", "amount": 50 } },
       { "id": "chance-pay-consultant", "text": "Pay a consultant for a market study: $50.", "effect": { "type": "pay", "amount": 50 } },
