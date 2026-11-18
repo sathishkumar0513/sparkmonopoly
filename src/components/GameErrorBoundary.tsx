@@ -70,7 +70,7 @@ export class GameErrorBoundary extends Component<
     return (
       <main className="game-error-panel" role="alert">
         <div className="game-error-card">
-          <span className="eyebrow">Business Tycoon</span>
+          <span className="eyebrow">Spark Monopoly</span>
           <h1>{this.props.title}</h1>
           <p>{this.props.description}</p>
           <div className="game-error-actions">

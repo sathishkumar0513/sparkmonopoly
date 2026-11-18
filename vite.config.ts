@@ -29,12 +29,12 @@ export default defineConfig(({ mode }) => {
         includeAssets: [
           "robots.txt",
           "sitemap.xml",
-          "icons/business-tycoon-192.png",
-          "icons/business-tycoon-512.png",
+          "icons/spark-monopoly-192.png",
+          "icons/spark-monopoly-512.png",
         ],
         manifest: {
-          name: "Business Tycoon",
-          short_name: "Business Tycoon",
+          name: "Spark Monopoly",
+          short_name: "Spark Monopoly",
           description: "A colorful, turn-based business strategy board game.",
           theme_color: "#101a2b",
           background_color: "#101a2b",
@@ -43,13 +43,13 @@ export default defineConfig(({ mode }) => {
           scope: "./",
           icons: [
             {
-              src: "icons/business-tycoon-192.png",
+              src: "icons/spark-monopoly-192.png",
               sizes: "192x192",
               type: "image/png",
               purpose: "any",
             },
             {
-              src: "icons/business-tycoon-512.png",
+              src: "icons/spark-monopoly-512.png",
               sizes: "512x512",
               type: "image/png",
               purpose: "any maskable",

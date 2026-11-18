@@ -152,10 +152,10 @@ export function DevSetup({ theme, onChangeTheme, onStart, onSimulationComplete, 
       } as React.CSSProperties}
     >
     <header className="setup-header">
-      <img className="setup-mark" src={publicAsset("business-tycoon-logo.png")} alt="" aria-hidden="true" />
+      <img className="setup-mark" src={publicAsset("spark-monopoly-logo.png")} alt="" aria-hidden="true" />
       <div>
         <p className="eyebrow">{t("setup.tagline")}</p>
-        <h1>Business Tycoon</h1>
+        <h1>Spark Monopoly</h1>
       </div>
       <div className="setup-header-actions">
         <button className="header-chip theme-back-button" onClick={onChangeTheme}>

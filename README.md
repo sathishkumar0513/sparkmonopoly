@@ -1,6 +1,6 @@
-# Business Tycoon
+# Spark Monopoly
 
-Business Tycoon is an original, client-side business strategy board game for 2–6 people sharing one device. Choose a world, take turns, grow a portfolio, and see who builds the strongest business empire. It is a static Vite application and can be hosted on Vercel, Netlify, or GitHub Pages.
+Spark Monopoly is an original, client-side business strategy board game for 2–6 people sharing one device. Choose a world, take turns, grow a portfolio, and see who builds the strongest business empire. It is a static Vite application and can be hosted on Vercel, Netlify, or GitHub Pages.
 
 ## Features
 
@@ -128,7 +128,7 @@ npm run build
 
 On macOS/Linux: `VITE_BASE=/your-repository/ npm run build`. Vite asset URLs and React Router use the configured base. Publish the contents of `dist/` at that subpath. GitHub Pages does not apply the Vercel/Netlify response headers; use a CDN or another host if those headers are required.
 
-The web manifest and service worker cache the application shell and generated chunks, including the theme modules, for offline use after the first online visit. The main brand image is `public/business-tycoon-logo.png`; its 192px and 512px favicon/PWA versions are in `public/icons/`. Replace `example.com` in `public/robots.txt`, `public/sitemap.xml`, and the Open Graph/Twitter URL and image in `index.html` before publishing. Hashed assets are immutable; the HTML and service worker are configured not to cache.
+The web manifest and service worker cache the application shell and generated chunks, including the theme modules, for offline use after the first online visit. The main brand image is `public/spark-monopoly-logo.png`; its 192px and 512px favicon/PWA versions are in `public/icons/`. Replace `example.com` in `public/robots.txt`, `public/sitemap.xml`, and the Open Graph/Twitter URL and image in `index.html` before publishing. Hashed assets are immutable; the HTML and service worker are configured not to cache.
 
 ## Troubleshooting
 

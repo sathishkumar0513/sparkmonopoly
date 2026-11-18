@@ -510,7 +510,7 @@ export function GameScreen({ botSpeed = "normal", turnTimerSeconds = 0, paused =
       <header className="game-header">
         <div>
           <p className="eyebrow">{t("game.tagline")}</p>
-          <h1>Business Tycoon</h1>
+          <h1>Spark Monopoly</h1>
         </div>
         <div className="header-chip">
           <span className="online-dot" />

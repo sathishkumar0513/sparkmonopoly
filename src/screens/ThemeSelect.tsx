@@ -31,10 +31,10 @@ export function ThemeSelect() {
   return (
     <main className="theme-shell">
       <header className="setup-header">
-        <img className="setup-mark" src={publicAsset("business-tycoon-logo.png")} alt="" aria-hidden="true" />
+        <img className="setup-mark" src={publicAsset("spark-monopoly-logo.png")} alt="" aria-hidden="true" />
         <div>
           <p className="eyebrow">{t("themePicker.eyebrow")}</p>
-          <h1>Business Tycoon</h1>
+          <h1>Spark Monopoly</h1>
         </div>
         <LanguageSwitcher />
       </header>

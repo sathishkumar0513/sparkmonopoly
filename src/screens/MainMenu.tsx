@@ -37,7 +37,7 @@ export function MainMenu({ reducedMotion }: { reducedMotion: boolean }) {
         <div className="brand-lockup">
           <motion.img
             className="brand-logo"
-            src={publicAsset("business-tycoon-logo.png")}
+            src={publicAsset("spark-monopoly-logo.png")}
             alt=""
             aria-hidden="true"
             animate={reducedMotion ? undefined : { y: [0, -4, 0] }}
@@ -45,7 +45,7 @@ export function MainMenu({ reducedMotion }: { reducedMotion: boolean }) {
           />
           <div>
             <p className="eyebrow">{t("menu.eyebrow")}</p>
-            <h1>Business Tycoon</h1>
+            <h1>Spark Monopoly</h1>
           </div>
         </div>
         <LanguageSwitcher />
@@ -53,7 +53,7 @@ export function MainMenu({ reducedMotion }: { reducedMotion: boolean }) {
       <section className="menu-hero">
         <img
           className="menu-brand-art"
-          src={publicAsset("business-tycoon-logo.png")}
+          src={publicAsset("spark-monopoly-logo.png")}
           alt=""
           fetchPriority="high"
         />
