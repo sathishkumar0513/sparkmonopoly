@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#14213a"/>
+      <stop offset="1" stop-color="#263d5b"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffe394"/>
+      <stop offset="1" stop-color="#e6a932"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="560" rx="34" fill="url(#sky)"/>
+  <path d="M0 448h1200v112H0z" fill="#101a2b"/>
+  <g fill="#35516f" opacity=".8">
+    <path d="M52 448V260h94v188zm113 0V198h82v250zm102 0V284h108v164zm700 0V238h102v210zm119 0V172h70v276z"/>
+  </g>
+  <g fill="#f2c466" opacity=".8">
+    <path d="M77 292h18v18H77zm35 0h18v18h-18zm-35 42h18v18H77zm35 0h18v18h-18zM185 232h17v18h-17zm0 42h17v18h-17zm0 42h17v18h-17zm-4 132h22v-75h-22zM1000 272h18v18h-18zm38 0h18v18h-18zm-38 42h18v18h-18zm38 0h18v18h-18zM1095 210h16v18h-16zm0 42h16v18h-16z"/>
+  </g>
+  <g transform="translate(866 68)">
+    <rect x="0" y="0" width="130" height="130" rx="22" fill="#f7f4eb" stroke="#e9b64d" stroke-width="8"/>
+    <circle cx="34" cy="34" r="10" fill="#18263c"/><circle cx="96" cy="34" r="10" fill="#18263c"/>
+    <circle cx="65" cy="65" r="10" fill="#18263c"/><circle cx="34" cy="96" r="10" fill="#18263c"/>
+    <circle cx="96" cy="96" r="10" fill="#18263c"/>
+    <circle cx="186" cy="54" r="40" fill="#e7b54a"/>
+    <path d="M186 31v46m-15-34h23a11 11 0 0 1 0 22h-16a11 11 0 0 0 0 22h24" fill="none" stroke="#18263c" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="600" y="315" fill="url(#gold)" font-family="Arial, sans-serif" font-size="90" font-weight="800" text-anchor="middle" letter-spacing="2">BUSINESS</text>
+  <text x="600" y="405" fill="#f5f7fb" font-family="Arial, sans-serif" font-size="78" font-weight="800" text-anchor="middle" letter-spacing="5">TYCOON</text>
+  <text x="600" y="492" fill="#91d9c8" font-family="Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle" letter-spacing="5">BUILD · TRADE · GROW</text>
+</svg>

@@ -1,6 +1,6 @@
-import internationalTheme from "../../themes/international.json";
 import { createGame } from "../gameReducer";
 import type { GameEvent, PlayerSetup } from "../types";
+import { loadTheme } from "../../themes";
 import { runBotGame } from "./index";
 
 declare const process: {
@@ -263,14 +263,16 @@ function printTable(metrics: GameMetrics[], gameCount: number): void {
   console.log("\nBank flow includes salary, collect cards, mortgages, building sales, taxes/payments, purchases, auctions, builds, and unmortgages.");
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const gameCount = parseGameCount(process.argv.slice(2));
   const { seed: firstSeed, playerCounts } = parseSimulationRange();
+  const themeId = process.env.SIM_THEME ?? "international";
+  const theme = await loadTheme(themeId);
   const metrics: GameMetrics[] = [];
   for (let index = 0; index < gameCount; index += 1) {
     const seed = firstSeed + index;
     const playerCount = playerCounts[index % playerCounts.length] ?? 3;
-    const initial = createGame(internationalTheme, createSetups(index, playerCount), { seed });
+    const initial = createGame(theme, createSetups(index, playerCount), { seed });
     const eventLog: GameEvent[] = [];
     const result = runBotGame(initial, {
       turnCap: TURN_CAP,
@@ -287,13 +289,11 @@ function main(): void {
       eventLog,
     ));
   }
-  console.log(`Bot-only economy diagnostic · international theme · cap ${TURN_CAP} turns · ${[...new Set(playerCounts)].join(", ")} players · seeds ${firstSeed}–${firstSeed + gameCount - 1}`);
+  console.log(`Bot-only economy diagnostic · ${theme.name} theme · cap ${TURN_CAP} turns · ${[...new Set(playerCounts)].join(", ")} players · seeds ${firstSeed}–${firstSeed + gameCount - 1}`);
   printTable(metrics, gameCount);
 }
 
-try {
-  main();
-} catch (error) {
+void main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
   process.exitCode = 1;
-}
+});

@@ -16,6 +16,9 @@ import type {
   UndoFrame,
 } from "./types";
 
+export const MAX_EVENT_LOG_ENTRIES = 1000;
+const MAX_UNDO_FRAMES = 100;
+
 const DEFAULT_OPTIONS = {
   startingCash: 1500,
   jailFine: 50,
@@ -79,7 +82,7 @@ function snapshot(state: GameState): UndoFrame {
     winnerId: state.winnerId,
     freeParkingPot: state.freeParkingPot,
     afterLandingPhase: state.afterLandingPhase,
-    eventLogLength: state.eventLog.length,
+    eventLogLastId: state.eventLog.at(-1)?.id ?? 0,
   };
 }
 
@@ -97,7 +100,7 @@ function withEvent(
   };
   return {
     ...state,
-    eventLog: [...state.eventLog, event],
+    eventLog: [...state.eventLog, event].slice(-MAX_EVENT_LOG_ENTRIES),
     nextEventId: state.nextEventId + 1,
   };
 }
@@ -180,6 +183,8 @@ export function createGame(
   const players: Player[] = playerSetups.map((setup) => ({
     id: setup.id,
     name: setup.name.trim(),
+    token: setup.token,
+    color: setup.color,
     isBot: setup.isBot ?? false,
     botDifficulty: setup.botDifficulty ?? "easy",
     cash: settings.startingCash,
@@ -1175,6 +1180,7 @@ function bankrupt(state: GameState): GameState {
       jailCards: [...player.jailCards, ...debtor.jailCards],
     }));
   }
+
   const bankAuctionQueue = creditor
     ? state.bankAuctionQueue
     : [
@@ -1241,6 +1247,25 @@ function bankrupt(state: GameState): GameState {
     }
   }
   return next;
+}
+
+function resign(state: GameState): GameState {
+  assertRule(
+    state.phase === "roll" || state.phase === "endTurn" || state.phase === "jail" || state.phase === "purchase",
+    "A player can resign between active moves.",
+  );
+  const player = currentPlayer(state);
+  const debtState: GameState = {
+    ...state,
+    phase: "debt",
+    pendingDebt: {
+      debtorId: player.id,
+      creditorId: null,
+      amount: 0,
+      reason: "resignation",
+    },
+  };
+  return bankrupt(debtState);
 }
 
 function payJailFine(state: GameState): GameState {
@@ -1465,9 +1490,9 @@ export function getAvailableActions(state: GameState): GameAction[] {
 
   switch (state.phase) {
     case "roll":
-      return [{ type: "ROLL_DICE" }, ...managementActions(state, player)];
+      return [{ type: "ROLL_DICE" }, { type: "RESIGN" }, ...managementActions(state, player)];
     case "jail": {
-      const actions: GameAction[] = [{ type: "ROLL_DICE" }];
+      const actions: GameAction[] = [{ type: "ROLL_DICE" }, { type: "RESIGN" }];
       actions.push({ type: "PAY_JAIL_FINE" });
       if (player.jailCards.length > 0) actions.push({ type: "USE_JAIL_CARD" });
       return actions;
@@ -1476,6 +1501,7 @@ export function getAvailableActions(state: GameState): GameAction[] {
       if (!state.pendingPurchase) return [];
       const tile = getBuyableTile(state, state.pendingPurchase);
       return [
+        { type: "RESIGN" },
         ...(player.cash >= tile.price ? [{ type: "BUY_PROPERTY" as const }] : []),
         { type: "DECLINE_PURCHASE" },
       ];
@@ -1522,7 +1548,7 @@ export function getAvailableActions(state: GameState): GameAction[] {
       ];
     }
     case "endTurn":
-      return [{ type: "END_TURN" }, ...managementActions(state, player)];
+      return [{ type: "END_TURN" }, { type: "RESIGN" }, ...managementActions(state, player)];
     case "gameOver":
       return [];
   }
@@ -1573,6 +1599,8 @@ function reduceAction(state: GameState, action: GameAction): GameState {
       return payDebt(state);
     case "DECLARE_BANKRUPTCY":
       return bankrupt(state);
+    case "RESIGN":
+      return resign(state);
     case "PROPOSE_TRADE":
       return proposeTrade(state, action.offer);
     case "COUNTER_TRADE":
@@ -1592,7 +1620,7 @@ function undo(state: GameState): GameState {
   const frame = state.undoFrames[state.undoFrames.length - 1];
   assertRule(frame, "There is no action to undo this turn.");
   assertRule(frame.turnNumber === state.turnNumber, "An action from a prior turn cannot be undone.");
-  const log = state.eventLog.slice(0, frame.eventLogLength);
+  const log = state.eventLog.filter((event) => event.id <= frame.eventLogLastId);
   const restored: GameState = {
     ...state,
     ...frame,
@@ -1629,5 +1657,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       : {}),
   });
   if (action.type === "END_TURN") return { ...logged, undoFrames: [] };
-  return { ...logged, undoFrames: [...state.undoFrames, before] };
+  return {
+    ...logged,
+    undoFrames: [...state.undoFrames, before].slice(-MAX_UNDO_FRAMES),
+  };
 }

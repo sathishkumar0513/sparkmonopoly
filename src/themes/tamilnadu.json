@@ -1,0 +1,1029 @@
+{
+  "id": "tamilnadu",
+  "name": "Tamil Nadu",
+  "currency": {
+    "symbol": "₹",
+    "format": "before",
+    "shortScale": {
+      "thousand": "K",
+      "million": "M",
+      "billion": "B",
+      "lakh": "L",
+      "crore": "Cr"
+    }
+  },
+  "palette": {
+    "primary": "#a84636",
+    "secondary": "#248b76",
+    "accent": "#e7ba55",
+    "background": "#1e1918",
+    "surface": "#302522",
+    "text": "#fff8ef"
+  },
+  "backgroundStyle": "deep maroon with subtle textile-grid lines",
+  "tiles": [
+    {
+      "id": "go",
+      "type": "go",
+      "name": "Business Launch",
+      "salary": 200,
+      "name_ta": "வணிகத் தொடக்கம்"
+    },
+    {
+      "id": "tamilnadu-thoothukudi-salt-port",
+      "type": "property",
+      "name": "Thoothukudi Salt & Port",
+      "price": 60,
+      "mortgageValue": 30,
+      "rent": {
+        "base": 2,
+        "colorSetDouble": 4,
+        "houses": [
+          10,
+          30,
+          90,
+          160
+        ],
+        "hotel": 250
+      },
+      "houseCost": 50,
+      "colorGroup": "brown",
+      "icon": "🧂",
+      "businessFact": "Salt making and port services support distinct coastal livelihoods.",
+      "name_ta": "தூத்துக்குடி உப்பு மற்றும் துறைமுகம்",
+      "fact_ta": "தூத்துக்குடி உப்பு மற்றும் துறைமுகம் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "chest-1",
+      "type": "communityChest",
+      "name": "Community Fund",
+      "name_ta": "சமூக நிதி"
+    },
+    {
+      "id": "tamilnadu-sivakasi-printing-works",
+      "type": "property",
+      "name": "Sivakasi Printing Works",
+      "price": 60,
+      "mortgageValue": 30,
+      "rent": {
+        "base": 4,
+        "colorSetDouble": 8,
+        "houses": [
+          20,
+          60,
+          180,
+          320
+        ],
+        "hotel": 450
+      },
+      "houseCost": 50,
+      "colorGroup": "brown",
+      "icon": "🖨️",
+      "businessFact": "Printing businesses serve packaging, publishing, and commercial communication.",
+      "name_ta": "சிவகாசி அச்சுத் தொழில்",
+      "fact_ta": "சிவகாசி அச்சுத் தொழில் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "income-tax",
+      "type": "incomeTax",
+      "name": "Income Tax",
+      "amount": 200,
+      "name_ta": "வருமான வரி"
+    },
+    {
+      "id": "tamilnadu-chennai-central-junction",
+      "type": "transport",
+      "name": "Chennai Central Junction",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚆",
+      "businessFact": "A major rail hub links Chennai with cities across India.",
+      "name_ta": "சென்னை சென்ட்ரல் சந்திப்பு",
+      "fact_ta": "சென்னை சென்ட்ரல் சந்திப்பு பயணிகள் மற்றும் வணிகப் போக்குவரத்துக்கு உதவுகிறது."
+    },
+    {
+      "id": "tamilnadu-salem-steel-works",
+      "type": "property",
+      "name": "Salem Steel Works",
+      "price": 100,
+      "mortgageValue": 50,
+      "rent": {
+        "base": 6,
+        "colorSetDouble": 12,
+        "houses": [
+          30,
+          90,
+          270,
+          400
+        ],
+        "hotel": 550
+      },
+      "houseCost": 50,
+      "colorGroup": "lightBlue",
+      "icon": "🏗️",
+      "businessFact": "Steelmaking supplies material for construction and manufacturing.",
+      "name_ta": "சேலம் எஃகு ஆலை",
+      "fact_ta": "சேலம் எஃகு ஆலை தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "chance-1",
+      "type": "chance",
+      "name": "Festival Opportunity",
+      "name_ta": "வாய்ப்பு அட்டை"
+    },
+    {
+      "id": "tamilnadu-erode-turmeric-market",
+      "type": "property",
+      "name": "Erode Turmeric Market",
+      "price": 100,
+      "mortgageValue": 50,
+      "rent": {
+        "base": 6,
+        "colorSetDouble": 12,
+        "houses": [
+          30,
+          90,
+          270,
+          400
+        ],
+        "hotel": 550
+      },
+      "houseCost": 50,
+      "colorGroup": "lightBlue",
+      "icon": "🌿",
+      "businessFact": "Turmeric trading links growers, processors, and wholesale markets.",
+      "name_ta": "ஈரோடு மஞ்சள் சந்தை",
+      "fact_ta": "ஈரோடு மஞ்சள் சந்தை தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-kanchipuram-silk-weaves",
+      "type": "property",
+      "name": "Kanchipuram Silk Weaves",
+      "price": 120,
+      "mortgageValue": 60,
+      "rent": {
+        "base": 8,
+        "colorSetDouble": 16,
+        "houses": [
+          40,
+          100,
+          300,
+          450
+        ],
+        "hotel": 600
+      },
+      "houseCost": 50,
+      "colorGroup": "lightBlue",
+      "icon": "🧣",
+      "businessFact": "Silk weaving combines specialised craft and textile trade.",
+      "name_ta": "காஞ்சிபுரம் பட்டுநெசவு",
+      "fact_ta": "காஞ்சிபுரம் பட்டுநெசவு தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "jail",
+      "type": "jail",
+      "name": "Inspection Office",
+      "name_ta": "சந்திப்பு அலுவலகம்"
+    },
+    {
+      "id": "tamilnadu-tiruchirappalli-engineering",
+      "type": "property",
+      "name": "Tiruchirappalli Engineering",
+      "price": 140,
+      "mortgageValue": 70,
+      "rent": {
+        "base": 10,
+        "colorSetDouble": 20,
+        "houses": [
+          50,
+          150,
+          450,
+          625
+        ],
+        "hotel": 750
+      },
+      "houseCost": 100,
+      "colorGroup": "pink",
+      "icon": "⚙️",
+      "businessFact": "Engineering workshops support fabrication, maintenance, and industry.",
+      "name_ta": "திருச்சி பொறியியல் மையம்",
+      "fact_ta": "திருச்சி பொறியியல் மையம் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-tneb-power-network",
+      "type": "utility",
+      "name": "TNEB Power Network",
+      "price": 150,
+      "mortgageValue": 75,
+      "diceMultipliers": [
+        4,
+        10
+      ],
+      "icon": "⚡",
+      "businessFact": "Electricity services support homes, farms, and industry.",
+      "name_ta": "தமிழ்நாடு மின்சார வாரியம்",
+      "fact_ta": "தமிழ்நாடு மின்சார வாரியம் அத்தியாவசிய சேவைகளை வழங்குகிறது."
+    },
+    {
+      "id": "tamilnadu-madurai-temple-tourism",
+      "type": "property",
+      "name": "Madurai Temple Tourism",
+      "price": 140,
+      "mortgageValue": 70,
+      "rent": {
+        "base": 10,
+        "colorSetDouble": 20,
+        "houses": [
+          50,
+          150,
+          450,
+          625
+        ],
+        "hotel": 750
+      },
+      "houseCost": 100,
+      "colorGroup": "pink",
+      "icon": "🛕",
+      "businessFact": "Visitor services support local hospitality, transport, and retail.",
+      "name_ta": "மதுரை கோயில் சுற்றுலா",
+      "fact_ta": "மதுரை கோயில் சுற்றுலா தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-thanjavur-rice-milling",
+      "type": "property",
+      "name": "Thanjavur Rice Milling",
+      "price": 160,
+      "mortgageValue": 80,
+      "rent": {
+        "base": 12,
+        "colorSetDouble": 24,
+        "houses": [
+          60,
+          180,
+          500,
+          700
+        ],
+        "hotel": 900
+      },
+      "houseCost": 100,
+      "colorGroup": "pink",
+      "icon": "🌾",
+      "businessFact": "Rice mills process and distribute an important regional food crop.",
+      "name_ta": "தஞ்சாவூர் அரிசி ஆலை",
+      "fact_ta": "தஞ்சாவூர் அரிசி ஆலை தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-erode-junction",
+      "type": "transport",
+      "name": "Erode Junction",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚉",
+      "businessFact": "Erode junction serves regional passenger and freight connections.",
+      "name_ta": "ஈரோடு சந்திப்பு",
+      "fact_ta": "ஈரோடு சந்திப்பு பயணிகள் மற்றும் வணிகப் போக்குவரத்துக்கு உதவுகிறது."
+    },
+    {
+      "id": "tamilnadu-coimbatore-pump-works",
+      "type": "property",
+      "name": "Coimbatore Pump Works",
+      "price": 180,
+      "mortgageValue": 90,
+      "rent": {
+        "base": 14,
+        "colorSetDouble": 28,
+        "houses": [
+          70,
+          200,
+          550,
+          750
+        ],
+        "hotel": 950
+      },
+      "houseCost": 100,
+      "colorGroup": "orange",
+      "icon": "💧",
+      "businessFact": "Pump makers serve agriculture, buildings, and industrial applications.",
+      "name_ta": "கோயம்புத்தூர் பம்புகள்",
+      "fact_ta": "கோயம்புத்தூர் பம்புகள் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "chest-2",
+      "type": "communityChest",
+      "name": "Community Fund",
+      "name_ta": "சமூக நிதி"
+    },
+    {
+      "id": "tamilnadu-tiruppur-knitwear-park",
+      "type": "property",
+      "name": "Tiruppur Knitwear Park",
+      "price": 180,
+      "mortgageValue": 90,
+      "rent": {
+        "base": 14,
+        "colorSetDouble": 28,
+        "houses": [
+          70,
+          200,
+          550,
+          750
+        ],
+        "hotel": 950
+      },
+      "houseCost": 100,
+      "colorGroup": "orange",
+      "icon": "🧶",
+      "businessFact": "Knitwear production connects textile mills, makers, and exporters.",
+      "name_ta": "திருப்பூர் பின்னலாடைத் தொழில்",
+      "fact_ta": "திருப்பூர் பின்னலாடைத் தொழில் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-karur-home-textiles",
+      "type": "property",
+      "name": "Karur Home Textiles",
+      "price": 200,
+      "mortgageValue": 100,
+      "rent": {
+        "base": 16,
+        "colorSetDouble": 32,
+        "houses": [
+          80,
+          220,
+          600,
+          800
+        ],
+        "hotel": 1000
+      },
+      "houseCost": 100,
+      "colorGroup": "orange",
+      "icon": "🪡",
+      "businessFact": "Home textile businesses make furnishings for domestic and export markets.",
+      "name_ta": "கரூர் வீட்டு நெசவுத் தொழில்",
+      "fact_ta": "கரூர் வீட்டு நெசவுத் தொழில் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "free-parking",
+      "type": "freeParking",
+      "name": "Market Square",
+      "name_ta": "சந்தைத் திடல்"
+    },
+    {
+      "id": "tamilnadu-hosur-auto-components",
+      "type": "property",
+      "name": "Hosur Auto Components",
+      "price": 220,
+      "mortgageValue": 110,
+      "rent": {
+        "base": 18,
+        "colorSetDouble": 36,
+        "houses": [
+          90,
+          250,
+          700,
+          875
+        ],
+        "hotel": 1050
+      },
+      "houseCost": 150,
+      "colorGroup": "red",
+      "icon": "🚗",
+      "businessFact": "Component makers supply parts to vehicle assembly and service networks.",
+      "name_ta": "ஓசூர் வாகன உதிரிபாகங்கள்",
+      "fact_ta": "ஓசூர் வாகன உதிரிபாகங்கள் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "chance-2",
+      "type": "chance",
+      "name": "Festival Opportunity",
+      "name_ta": "வாய்ப்பு அட்டை"
+    },
+    {
+      "id": "tamilnadu-vellore-healthcare-district",
+      "type": "property",
+      "name": "Vellore Healthcare District",
+      "price": 220,
+      "mortgageValue": 110,
+      "rent": {
+        "base": 18,
+        "colorSetDouble": 36,
+        "houses": [
+          90,
+          250,
+          700,
+          875
+        ],
+        "hotel": 1050
+      },
+      "houseCost": 150,
+      "colorGroup": "red",
+      "icon": "🏥",
+      "businessFact": "Healthcare services create demand for skilled work and support businesses.",
+      "name_ta": "வேலூர் சுகாதார மையம்",
+      "fact_ta": "வேலூர் சுகாதார மையம் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-dindigul-locks-foods",
+      "type": "property",
+      "name": "Dindigul Locks & Foods",
+      "price": 240,
+      "mortgageValue": 120,
+      "rent": {
+        "base": 20,
+        "colorSetDouble": 40,
+        "houses": [
+          100,
+          300,
+          750,
+          925
+        ],
+        "hotel": 1100
+      },
+      "houseCost": 150,
+      "colorGroup": "red",
+      "icon": "🔐",
+      "businessFact": "Local manufacturing and food businesses serve diverse regional customers.",
+      "name_ta": "திண்டுக்கல் பூட்டுகள் மற்றும் உணவு",
+      "fact_ta": "திண்டுக்கல் பூட்டுகள் மற்றும் உணவு தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-tiruchirappalli-junction",
+      "type": "transport",
+      "name": "Tiruchirappalli Junction",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚆",
+      "businessFact": "Trichy junction connects central Tamil Nadu with other regions.",
+      "name_ta": "திருச்சி சந்திப்பு",
+      "fact_ta": "திருச்சி சந்திப்பு பயணிகள் மற்றும் வணிகப் போக்குவரத்துக்கு உதவுகிறது."
+    },
+    {
+      "id": "tamilnadu-tirunelveli-food-works",
+      "type": "property",
+      "name": "Tirunelveli Food Works",
+      "price": 260,
+      "mortgageValue": 130,
+      "rent": {
+        "base": 22,
+        "colorSetDouble": 44,
+        "houses": [
+          110,
+          330,
+          800,
+          975
+        ],
+        "hotel": 1150
+      },
+      "houseCost": 150,
+      "colorGroup": "yellow",
+      "icon": "🍚",
+      "businessFact": "Food enterprises connect local ingredients with shops and restaurants.",
+      "name_ta": "திருநெல்வேலி உணவுத் தொழில்",
+      "fact_ta": "திருநெல்வேலி உணவுத் தொழில் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-cuddalore-chemical-industries",
+      "type": "property",
+      "name": "Cuddalore Chemical Industries",
+      "price": 260,
+      "mortgageValue": 130,
+      "rent": {
+        "base": 22,
+        "colorSetDouble": 44,
+        "houses": [
+          110,
+          330,
+          800,
+          975
+        ],
+        "hotel": 1150
+      },
+      "houseCost": 150,
+      "colorGroup": "yellow",
+      "icon": "⚗️",
+      "businessFact": "Chemical production depends on safety, process control, and supply chains.",
+      "name_ta": "கடலூர் வேதியியல் தொழில்",
+      "fact_ta": "கடலூர் வேதியியல் தொழில் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-chennai-metro-water",
+      "type": "utility",
+      "name": "Chennai Metro Water",
+      "price": 150,
+      "mortgageValue": 75,
+      "diceMultipliers": [
+        4,
+        10
+      ],
+      "icon": "💧",
+      "businessFact": "Metro Water provides essential water and sewerage services in Chennai.",
+      "name_ta": "சென்னை மெட்ரோ வாட்டர்",
+      "fact_ta": "சென்னை மெட்ரோ வாட்டர் அத்தியாவசிய சேவைகளை வழங்குகிறது."
+    },
+    {
+      "id": "tamilnadu-namakkal-logistics-park",
+      "type": "property",
+      "name": "Namakkal Logistics Park",
+      "price": 280,
+      "mortgageValue": 140,
+      "rent": {
+        "base": 24,
+        "colorSetDouble": 48,
+        "houses": [
+          120,
+          360,
+          850,
+          1025
+        ],
+        "hotel": 1200
+      },
+      "houseCost": 150,
+      "colorGroup": "yellow",
+      "icon": "🚚",
+      "businessFact": "Transport operators move goods between producers, markets, and ports.",
+      "name_ta": "நாமக்கல் சரக்குப் போக்குவரத்து",
+      "fact_ta": "நாமக்கல் சரக்குப் போக்குவரத்து தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "go-to-jail",
+      "type": "goToJail",
+      "name": "Inspection Stop",
+      "name_ta": "ஆய்வு நிறுத்தம்"
+    },
+    {
+      "id": "tamilnadu-chennai-it-corridor",
+      "type": "property",
+      "name": "Chennai IT Corridor",
+      "price": 300,
+      "mortgageValue": 150,
+      "rent": {
+        "base": 26,
+        "colorSetDouble": 52,
+        "houses": [
+          130,
+          390,
+          900,
+          1100
+        ],
+        "hotel": 1275
+      },
+      "houseCost": 200,
+      "colorGroup": "green",
+      "icon": "💻",
+      "businessFact": "IT teams develop and support software and digital services.",
+      "name_ta": "சென்னை தகவல் தொழில்நுட்பப் பாதை",
+      "fact_ta": "சென்னை தகவல் தொழில்நுட்பப் பாதை தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-chennai-auto-manufacturing",
+      "type": "property",
+      "name": "Chennai Auto Manufacturing",
+      "price": 300,
+      "mortgageValue": 150,
+      "rent": {
+        "base": 26,
+        "colorSetDouble": 52,
+        "houses": [
+          130,
+          390,
+          900,
+          1100
+        ],
+        "hotel": 1275
+      },
+      "houseCost": 200,
+      "colorGroup": "green",
+      "icon": "🏭",
+      "businessFact": "Vehicle manufacturing draws on engineering and supplier networks.",
+      "name_ta": "சென்னை வாகன உற்பத்தி",
+      "fact_ta": "சென்னை வாகன உற்பத்தி தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "chest-3",
+      "type": "communityChest",
+      "name": "Community Fund",
+      "name_ta": "சமூக நிதி"
+    },
+    {
+      "id": "tamilnadu-coimbatore-industrial-park",
+      "type": "property",
+      "name": "Coimbatore Industrial Park",
+      "price": 320,
+      "mortgageValue": 160,
+      "rent": {
+        "base": 28,
+        "colorSetDouble": 56,
+        "houses": [
+          150,
+          450,
+          1000,
+          1200
+        ],
+        "hotel": 1400
+      },
+      "houseCost": 200,
+      "colorGroup": "green",
+      "icon": "🔩",
+      "businessFact": "Industrial clusters bring suppliers and specialist workshops together.",
+      "name_ta": "கோயம்புத்தூர் தொழிற்பேட்டை",
+      "fact_ta": "கோயம்புத்தூர் தொழிற்பேட்டை தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "tamilnadu-madurai-junction",
+      "type": "transport",
+      "name": "Madurai Junction",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚉",
+      "businessFact": "Madurai junction supports travel and commerce across the south.",
+      "name_ta": "மதுரை சந்திப்பு",
+      "fact_ta": "மதுரை சந்திப்பு பயணிகள் மற்றும் வணிகப் போக்குவரத்துக்கு உதவுகிறது."
+    },
+    {
+      "id": "chance-3",
+      "type": "chance",
+      "name": "Festival Opportunity",
+      "name_ta": "வாய்ப்பு அட்டை"
+    },
+    {
+      "id": "tamilnadu-chennai-finance-district",
+      "type": "property",
+      "name": "Chennai Finance District",
+      "price": 350,
+      "mortgageValue": 175,
+      "rent": {
+        "base": 35,
+        "colorSetDouble": 70,
+        "houses": [
+          175,
+          500,
+          1100,
+          1300
+        ],
+        "hotel": 1500
+      },
+      "houseCost": 200,
+      "colorGroup": "darkBlue",
+      "icon": "🏙️",
+      "businessFact": "Financial services support payments, lending, and business investment.",
+      "name_ta": "சென்னை நிதி மாவட்டம்",
+      "fact_ta": "சென்னை நிதி மாவட்டம் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    },
+    {
+      "id": "luxury-tax",
+      "type": "luxuryTax",
+      "name": "Special Levy",
+      "amount": 100,
+      "name_ta": "சிறப்பு வரி"
+    },
+    {
+      "id": "tamilnadu-ennore-port-gateway",
+      "type": "property",
+      "name": "Ennore Port Gateway",
+      "price": 400,
+      "mortgageValue": 200,
+      "rent": {
+        "base": 50,
+        "colorSetDouble": 100,
+        "houses": [
+          200,
+          600,
+          1400,
+          1700
+        ],
+        "hotel": 2000
+      },
+      "houseCost": 200,
+      "colorGroup": "darkBlue",
+      "icon": "🌊",
+      "businessFact": "Port logistics connect shipping with regional commerce and industry.",
+      "name_ta": "எண்ணூர் துறைமுக நுழைவாயில்",
+      "fact_ta": "எண்ணூர் துறைமுக நுழைவாயில் தொடர்பான தொழில்கள் உள்ளூர் உற்பத்தி மற்றும் சேவைகளுக்கு ஆதரவளிக்கின்றன."
+    }
+  ],
+  "cards": {
+    "chance": [
+      {
+        "id": "chance-move-launch",
+        "text": "A regional opportunity takes you to Business Launch. Collect salary if you pass the start.",
+        "effect": {
+          "type": "move",
+          "destination": 0,
+          "collectSalaryOnPass": true
+        },
+        "text_ta": "வணிகத் தொடக்கம் செல்லுங்கள்."
+      },
+      {
+        "id": "chance-move-apex",
+        "text": "A regional opportunity takes you to Ennore Port Gateway. Collect salary if you pass the start.",
+        "effect": {
+          "type": "move",
+          "destination": 39,
+          "collectSalaryOnPass": true
+        },
+        "text_ta": "எண்ணூர் துறைமுக நுழைவாயில் செல்லுங்கள்."
+      },
+      {
+        "id": "chance-move-air",
+        "text": "A regional opportunity takes you to Erode Junction. Collect salary if you pass the start.",
+        "effect": {
+          "type": "move",
+          "destination": 15,
+          "collectSalaryOnPass": true
+        },
+        "text_ta": "ஈரோடு சந்திப்பு செல்லுங்கள்."
+      },
+      {
+        "id": "chance-move-rail",
+        "text": "A regional opportunity takes you to Chennai Central Junction. Collect salary if you pass the start.",
+        "effect": {
+          "type": "move",
+          "destination": 5,
+          "collectSalaryOnPass": true
+        },
+        "text_ta": "சென்னை சென்ட்ரல் சந்திப்பு செல்லுங்கள்."
+      },
+      {
+        "id": "chance-move-cobalt",
+        "text": "A regional opportunity takes you to Dindigul Locks & Foods. Collect salary if you pass the start.",
+        "effect": {
+          "type": "move",
+          "destination": 24,
+          "collectSalaryOnPass": true
+        },
+        "text_ta": "திண்டுக்கல் பூட்டுகள் மற்றும் உணவு செல்லுங்கள்."
+      },
+      {
+        "id": "chance-move-back",
+        "text": "Monsoon rain slows your journey. Move back three spaces.",
+        "effect": {
+          "type": "moveRelative",
+          "steps": -3,
+          "collectSalaryOnPass": false
+        },
+        "text_ta": "மழைக்காலத்தால் பயணம் தாமதம். மூன்று இடங்கள் பின்னால் செல்லுங்கள்."
+      },
+      {
+        "id": "chance-collect-award",
+        "text": "Pongal market bonus! Collect ₹100.",
+        "effect": {
+          "type": "collect",
+          "amount": 100
+        },
+        "text_ta": "பொங்கல் சந்தை போனஸ்! ₹100 பெறுங்கள்."
+      },
+      {
+        "id": "chance-collect-dividend",
+        "text": "A community business fund supports you. Collect ₹50.",
+        "effect": {
+          "type": "collect",
+          "amount": 50
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹50 பெறுங்கள்."
+      },
+      {
+        "id": "chance-pay-consultant",
+        "text": "Pay a local business service fee of ₹50.",
+        "effect": {
+          "type": "pay",
+          "amount": 50
+        },
+        "text_ta": "உள்ளூர் வணிகச் சேவைக்காக ₹50 செலுத்துங்கள்."
+      },
+      {
+        "id": "chance-pay-fee",
+        "text": "Pay a local business service fee of ₹15.",
+        "effect": {
+          "type": "pay",
+          "amount": 15
+        },
+        "text_ta": "உள்ளூர் வணிகச் சேவைக்காக ₹15 செலுத்துங்கள்."
+      },
+      {
+        "id": "chance-repairs",
+        "text": "Monsoon repairs: pay ₹25 per house and ₹100 per hotel.",
+        "effect": {
+          "type": "repair",
+          "houseCost": 25,
+          "hotelCost": 100
+        },
+        "text_ta": "மழைக்கால பழுது நீக்கம்: ஒவ்வொரு வீட்டிற்கும் ₹25, விடுதிக்கும் ₹100 செலுத்துங்கள்."
+      },
+      {
+        "id": "chance-jail",
+        "text": "A document review sends you to the inspection office.",
+        "effect": {
+          "type": "jail"
+        },
+        "text_ta": "ஆவணச் சரிபார்ப்புக்காக ஆய்வு அலுவலகத்திற்குச் செல்லுங்கள்."
+      },
+      {
+        "id": "chance-release",
+        "text": "Keep this release card for your next visit to the inspection office.",
+        "effect": {
+          "type": "getOutOfJailFree"
+        },
+        "text_ta": "விடுதலை அட்டையை அடுத்த முறை பயன்படுத்துவதற்காக வைத்துக்கொள்ளுங்கள்."
+      },
+      {
+        "id": "chance-pay-players",
+        "text": "Contribute ₹25 to each fellow founder.",
+        "effect": {
+          "type": "payEachPlayer",
+          "amount": 25
+        },
+        "text_ta": "ஒவ்வொரு சக நிறுவனருக்கும் ₹25 வழங்குங்கள்."
+      },
+      {
+        "id": "chance-collect-royalty",
+        "text": "A community business fund supports you. Collect ₹75.",
+        "effect": {
+          "type": "collect",
+          "amount": 75
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹75 பெறுங்கள்."
+      },
+      {
+        "id": "chance-pay-transport",
+        "text": "Pay a local business service fee of ₹40.",
+        "effect": {
+          "type": "pay",
+          "amount": 40
+        },
+        "text_ta": "உள்ளூர் வணிகச் சேவைக்காக ₹40 செலுத்துங்கள்."
+      }
+    ],
+    "communityChest": [
+      {
+        "id": "chest-collect-refund",
+        "text": "A community business fund supports you. Collect ₹20.",
+        "effect": {
+          "type": "collect",
+          "amount": 20
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹20 பெறுங்கள்."
+      },
+      {
+        "id": "chest-collect-grant",
+        "text": "Festival season brings more visitors to local businesses. Collect ₹100.",
+        "effect": {
+          "type": "collect",
+          "amount": 100
+        },
+        "text_ta": "திருவிழா காலத்தில் உள்ளூர் வணிகங்களுக்கு வருகை அதிகரித்தது. ₹100 பெறுங்கள்."
+      },
+      {
+        "id": "chest-collect-sale",
+        "text": "A community business fund supports you. Collect ₹50.",
+        "effect": {
+          "type": "collect",
+          "amount": 50
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹50 பெறுங்கள்."
+      },
+      {
+        "id": "chest-collect-bonus",
+        "text": "A community business fund supports you. Collect ₹25.",
+        "effect": {
+          "type": "collect",
+          "amount": 25
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹25 பெறுங்கள்."
+      },
+      {
+        "id": "chest-collect-legacy",
+        "text": "A community business fund supports you. Collect ₹100.",
+        "effect": {
+          "type": "collect",
+          "amount": 100
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹100 பெறுங்கள்."
+      },
+      {
+        "id": "chest-collect-insurance",
+        "text": "A community business fund supports you. Collect ₹20.",
+        "effect": {
+          "type": "collect",
+          "amount": 20
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹20 பெறுங்கள்."
+      },
+      {
+        "id": "chest-collect-bank",
+        "text": "A community business fund supports you. Collect ₹50.",
+        "effect": {
+          "type": "collect",
+          "amount": 50
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹50 பெறுங்கள்."
+      },
+      {
+        "id": "chest-move-launch",
+        "text": "A regional opportunity takes you to Business Launch. Collect salary if you pass the start.",
+        "effect": {
+          "type": "move",
+          "destination": 0,
+          "collectSalaryOnPass": true
+        },
+        "text_ta": "வணிகத் தொடக்கம் செல்லுங்கள்."
+      },
+      {
+        "id": "chest-pay-tax",
+        "text": "Pay a local business service fee of ₹50.",
+        "effect": {
+          "type": "pay",
+          "amount": 50
+        },
+        "text_ta": "உள்ளூர் வணிகச் சேவைக்காக ₹50 செலுத்துங்கள்."
+      },
+      {
+        "id": "chest-pay-clinic",
+        "text": "Pay a local business service fee of ₹50.",
+        "effect": {
+          "type": "pay",
+          "amount": 50
+        },
+        "text_ta": "உள்ளூர் வணிகச் சேவைக்காக ₹50 செலுத்துங்கள்."
+      },
+      {
+        "id": "chest-pay-repairs",
+        "text": "Monsoon repairs: pay ₹40 per house and ₹115 per hotel.",
+        "effect": {
+          "type": "repair",
+          "houseCost": 40,
+          "hotelCost": 115
+        },
+        "text_ta": "மழைக்கால பழுது நீக்கம்: ஒவ்வொரு வீட்டிற்கும் ₹40, விடுதிக்கும் ₹115 செலுத்துங்கள்."
+      },
+      {
+        "id": "chest-pay-players",
+        "text": "Contribute ₹10 to each fellow founder.",
+        "effect": {
+          "type": "payEachPlayer",
+          "amount": 10
+        },
+        "text_ta": "ஒவ்வொரு சக நிறுவனருக்கும் ₹10 வழங்குங்கள்."
+      },
+      {
+        "id": "chest-jail",
+        "text": "A document review sends you to the inspection office.",
+        "effect": {
+          "type": "jail"
+        },
+        "text_ta": "ஆவணச் சரிபார்ப்புக்காக ஆய்வு அலுவலகத்திற்குச் செல்லுங்கள்."
+      },
+      {
+        "id": "chest-release",
+        "text": "Keep this release card for your next visit to the inspection office.",
+        "effect": {
+          "type": "getOutOfJailFree"
+        },
+        "text_ta": "விடுதலை அட்டையை அடுத்த முறை பயன்படுத்துவதற்காக வைத்துக்கொள்ளுங்கள்."
+      },
+      {
+        "id": "chest-collect-dividend",
+        "text": "A community business fund supports you. Collect ₹25.",
+        "effect": {
+          "type": "collect",
+          "amount": 25
+        },
+        "text_ta": "சமூக வணிக நிதி கிடைத்தது. ₹25 பெறுங்கள்."
+      },
+      {
+        "id": "chest-pay-maintenance",
+        "text": "Pay a local business service fee of ₹100.",
+        "effect": {
+          "type": "pay",
+          "amount": 100
+        },
+        "text_ta": "உள்ளூர் வணிகச் சேவைக்காக ₹100 செலுத்துங்கள்."
+      }
+    ]
+  },
+  "name_ta": "தமிழ்நாடு",
+  "description": "Explore the cities, craft, manufacturing, services, and ports of Tamil Nadu.",
+  "description_ta": "தமிழ்நாட்டின் நகரங்கள், கைவினை, உற்பத்தி, சேவைகள் மற்றும் துறைமுகங்களைச் சுற்றிப் பாருங்கள்."
+}

@@ -1,6 +1,7 @@
 import { Howl, Howler } from "howler";
-import { getSoundSource } from "./soundRegistry";
+import { getSoundSource, SOUND_ASSETS } from "./soundRegistry";
 import type { SoundId } from "./soundRegistry";
+import { readStorageItem, writeStorageItem } from "../game/safeStorage";
 
 export interface AudioPreferences {
   muted: boolean;
@@ -50,7 +51,7 @@ export function playSound(id: SoundId): void {
   const sound =
     sounds.get(id) ??
     new Howl({
-      src: [getSoundSource(id)],
+      src: [getSoundSource(id, SOUND_ASSETS)],
       format: ["wav"],
       volume: 1,
       loop: id === "music",
@@ -61,9 +62,8 @@ export function playSound(id: SoundId): void {
 }
 
 function loadPreferences(): AudioPreferences {
-  if (typeof localStorage === "undefined") return { ...DEFAULT_PREFERENCES };
   try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+    const parsed: unknown = JSON.parse(readStorageItem(STORAGE_KEY) ?? "null");
     if (
       typeof parsed === "object" &&
       parsed !== null &&
@@ -87,6 +87,5 @@ function loadPreferences(): AudioPreferences {
 }
 
 function savePreferences(): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+  writeStorageItem(STORAGE_KEY, JSON.stringify(preferences));
 }

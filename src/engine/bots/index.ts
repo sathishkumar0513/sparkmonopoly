@@ -193,6 +193,7 @@ export function runBotGame(
     actionCapPerTurn?: number;
     retainEventLog?: boolean;
     onEvents?: (events: GameEvent[]) => void;
+    onTurnEnd?: (state: GameState) => void;
   } = {},
 ): BotGameResult {
   const turnCap = options.turnCap ?? 1000;
@@ -235,10 +236,14 @@ export function runBotGame(
       };
     }
     const actionState = retainEventLog ? state : { ...state, eventLog: [] };
+    const previousTurn = state.turnNumber;
     state = gameReducer(actionState, action);
     if (!retainEventLog) {
       options.onEvents?.(state.eventLog);
       state = { ...state, eventLog: [] };
+    }
+    if (state.turnNumber !== previousTurn || state.phase === "gameOver") {
+      options.onTurnEnd?.(state);
     }
     if (action.type === "END_TURN") {
       actionsThisTurn = 0;

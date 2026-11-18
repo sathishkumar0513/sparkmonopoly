@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import internationalData from "../../themes/international.json";
+import indiaData from "../../themes/india.json";
+import tamilnaduData from "../../themes/tamilnadu.json";
+import { validateTheme } from "../../themes/themeSchema";
 import { createGame, gameReducer } from "../gameReducer";
 import { chooseBotAction, createBotRandom, getBotActor, isBotActionLegal, runBotGame } from "./index";
 
@@ -46,28 +49,42 @@ describe("bot action policy", () => {
     }
   });
 
-  it("finishes at least 90% of 50 seeded 3-4 player games without illegal bot actions", () => {
-    let winners = 0;
-    for (let index = 0; index < 50; index += 1) {
-      const seed = 31000 + index;
-      const playerCount = 3 + (index % 2);
-      const setups = Array.from({ length: playerCount }, (_, seat) => ({
-        id: `player-${seat + 1}`,
-        name: `Player ${seat + 1}`,
-        isBot: true,
-        botDifficulty: (seat + index) % 2 === 0 ? "easy" as const : "medium" as const,
-      }));
-      const result = runBotGame(
-        createGame(internationalData, setups, { seed }),
-        { turnCap: 1000, retainEventLog: false },
-      );
-      expect(result.turns, `seed ${seed} exceeded the cap`).toBeLessThanOrEqual(1000);
-      expect(result.reason, `seed ${seed} stopped on an illegal bot action`).not.toMatch(/no legal action|illegal action/i);
-      if (result.outcome === "winner") {
-        winners += 1;
-        expect(result.state.winnerId).not.toBeNull();
-      }
-    }
-    expect(winners).toBeGreaterThanOrEqual(45);
+  it("records net-worth checkpoints at completed bot turns", () => {
+    const checkpoints: number[] = [];
+    const result = runBotGame(makeBots(31000), {
+      turnCap: 1000,
+      onTurnEnd: (state) => checkpoints.push(state.turnNumber),
+    });
+    expect(result.outcome).toBe("winner");
+    expect(checkpoints.length).toBeGreaterThan(1);
+    expect(checkpoints).toEqual([...checkpoints].sort((a, b) => a - b));
   });
+
+  it("finishes at least 90% of 50 seeded 3-4 player games on each theme without illegal actions", () => {
+    const themes = [internationalData, indiaData, tamilnaduData].map(validateTheme);
+    for (const theme of themes) {
+      let winners = 0;
+      for (let index = 0; index < 50; index += 1) {
+        const seed = 31000 + index;
+        const playerCount = 3 + (index % 2);
+        const setups = Array.from({ length: playerCount }, (_, seat) => ({
+          id: `player-${seat + 1}`,
+          name: `Player ${seat + 1}`,
+          isBot: true,
+          botDifficulty: (seat + index) % 2 === 0 ? "easy" as const : "medium" as const,
+        }));
+        const result = runBotGame(
+          createGame(theme, setups, { seed }),
+          { turnCap: 1000, retainEventLog: false },
+        );
+        expect(result.turns, `${theme.id}, seed ${seed} exceeded the cap`).toBeLessThanOrEqual(1000);
+        expect(result.reason, `${theme.id}, seed ${seed} stopped on an illegal bot action`).not.toMatch(/no legal action|illegal action/i);
+        if (result.outcome === "winner") {
+          winners += 1;
+          expect(result.state.winnerId).not.toBeNull();
+        }
+      }
+      expect(winners, `${theme.id} winner rate`).toBeGreaterThanOrEqual(45);
+    }
+  }, 15_000);
 });

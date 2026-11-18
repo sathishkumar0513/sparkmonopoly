@@ -1,0 +1,927 @@
+{
+  "id": "india",
+  "name": "India",
+  "currency": {
+    "symbol": "₹",
+    "format": "before",
+    "shortScale": {
+      "thousand": "K",
+      "million": "M",
+      "billion": "B",
+      "lakh": "L",
+      "crore": "Cr"
+    }
+  },
+  "palette": {
+    "primary": "#b85b2a",
+    "secondary": "#248b72",
+    "accent": "#e6b84e",
+    "background": "#211a18",
+    "surface": "#352822",
+    "text": "#fff8ed"
+  },
+  "backgroundStyle": "warm sandstone with subtle textile-grid lines",
+  "tiles": [
+    {
+      "id": "go",
+      "type": "go",
+      "name": "Business Launch",
+      "salary": 200
+    },
+    {
+      "id": "india-mumbai-textile-market",
+      "type": "property",
+      "name": "Mumbai Textile Market",
+      "price": 60,
+      "mortgageValue": 30,
+      "rent": {
+        "base": 2,
+        "colorSetDouble": 4,
+        "houses": [
+          10,
+          30,
+          90,
+          160
+        ],
+        "hotel": 250
+      },
+      "houseCost": 50,
+      "colorGroup": "brown",
+      "icon": "🧵",
+      "businessFact": "Textile businesses connect fibre, design, production, and trade."
+    },
+    {
+      "id": "chest-1",
+      "type": "communityChest",
+      "name": "Community Fund"
+    },
+    {
+      "id": "india-jaipur-craft-bazaar",
+      "type": "property",
+      "name": "Jaipur Craft Bazaar",
+      "price": 60,
+      "mortgageValue": 30,
+      "rent": {
+        "base": 4,
+        "colorSetDouble": 8,
+        "houses": [
+          20,
+          60,
+          180,
+          320
+        ],
+        "hotel": 450
+      },
+      "houseCost": 50,
+      "colorGroup": "brown",
+      "icon": "🪷",
+      "businessFact": "Craft enterprises bring skilled makers and local markets together."
+    },
+    {
+      "id": "income-tax",
+      "type": "incomeTax",
+      "name": "Annual Tax",
+      "amount": 200
+    },
+    {
+      "id": "india-mumbai-central-railway",
+      "type": "transport",
+      "name": "Mumbai Central Railway",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚆",
+      "businessFact": "Rail links connect city neighbourhoods with regional markets."
+    },
+    {
+      "id": "india-lucknow-food-works",
+      "type": "property",
+      "name": "Lucknow Food Works",
+      "price": 100,
+      "mortgageValue": 50,
+      "rent": {
+        "base": 6,
+        "colorSetDouble": 12,
+        "houses": [
+          30,
+          90,
+          270,
+          400
+        ],
+        "hotel": 550
+      },
+      "houseCost": 50,
+      "colorGroup": "lightBlue",
+      "icon": "🍲",
+      "businessFact": "Food businesses depend on careful sourcing and reliable distribution."
+    },
+    {
+      "id": "chance-1",
+      "type": "chance",
+      "name": "Festival Opportunity"
+    },
+    {
+      "id": "india-delhi-media-district",
+      "type": "property",
+      "name": "Delhi Media District",
+      "price": 100,
+      "mortgageValue": 50,
+      "rent": {
+        "base": 6,
+        "colorSetDouble": 12,
+        "houses": [
+          30,
+          90,
+          270,
+          400
+        ],
+        "hotel": 550
+      },
+      "houseCost": 50,
+      "colorGroup": "lightBlue",
+      "icon": "🎥",
+      "businessFact": "Media teams create and distribute news, entertainment, and advertising."
+    },
+    {
+      "id": "india-agra-heritage-hospitality",
+      "type": "property",
+      "name": "Agra Heritage Hospitality",
+      "price": 120,
+      "mortgageValue": 60,
+      "rent": {
+        "base": 8,
+        "colorSetDouble": 16,
+        "houses": [
+          40,
+          100,
+          300,
+          450
+        ],
+        "hotel": 600
+      },
+      "houseCost": 50,
+      "colorGroup": "lightBlue",
+      "icon": "🏛️",
+      "businessFact": "Hospitality services support visitors and nearby small businesses."
+    },
+    {
+      "id": "jail",
+      "type": "jail",
+      "name": "Inspection Office"
+    },
+    {
+      "id": "india-bengaluru-startup-quarter",
+      "type": "property",
+      "name": "Bengaluru Startup Quarter",
+      "price": 140,
+      "mortgageValue": 70,
+      "rent": {
+        "base": 10,
+        "colorSetDouble": 20,
+        "houses": [
+          50,
+          150,
+          450,
+          625
+        ],
+        "hotel": 750
+      },
+      "houseCost": 100,
+      "colorGroup": "pink",
+      "icon": "💡",
+      "businessFact": "Startup hubs bring founders, mentors, and investors into contact."
+    },
+    {
+      "id": "india-national-power-grid",
+      "type": "utility",
+      "name": "National Power Grid",
+      "price": 150,
+      "mortgageValue": 75,
+      "diceMultipliers": [
+        4,
+        10
+      ],
+      "icon": "⚡",
+      "businessFact": "Electricity networks balance generation and demand across regions."
+    },
+    {
+      "id": "india-hyderabad-pharma-park",
+      "type": "property",
+      "name": "Hyderabad Pharma Park",
+      "price": 140,
+      "mortgageValue": 70,
+      "rent": {
+        "base": 10,
+        "colorSetDouble": 20,
+        "houses": [
+          50,
+          150,
+          450,
+          625
+        ],
+        "hotel": 750
+      },
+      "houseCost": 100,
+      "colorGroup": "pink",
+      "icon": "🧪",
+      "businessFact": "Pharmaceutical manufacturing relies on research and quality systems."
+    },
+    {
+      "id": "india-pune-engineering-hub",
+      "type": "property",
+      "name": "Pune Engineering Hub",
+      "price": 160,
+      "mortgageValue": 80,
+      "rent": {
+        "base": 12,
+        "colorSetDouble": 24,
+        "houses": [
+          60,
+          180,
+          500,
+          700
+        ],
+        "hotel": 900
+      },
+      "houseCost": 100,
+      "colorGroup": "pink",
+      "icon": "⚙️",
+      "businessFact": "Engineering firms develop products for industrial and consumer use."
+    },
+    {
+      "id": "india-new-delhi-airport",
+      "type": "transport",
+      "name": "New Delhi Airport",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "✈️",
+      "businessFact": "Airports connect passengers, businesses, and cargo networks."
+    },
+    {
+      "id": "india-kolkata-port-exchange",
+      "type": "property",
+      "name": "Kolkata Port Exchange",
+      "price": 180,
+      "mortgageValue": 90,
+      "rent": {
+        "base": 14,
+        "colorSetDouble": 28,
+        "houses": [
+          70,
+          200,
+          550,
+          750
+        ],
+        "hotel": 950
+      },
+      "houseCost": 100,
+      "colorGroup": "orange",
+      "icon": "⚓",
+      "businessFact": "Port services connect inland businesses with coastal shipping."
+    },
+    {
+      "id": "chest-2",
+      "type": "communityChest",
+      "name": "Community Fund"
+    },
+    {
+      "id": "india-ahmedabad-textile-mills",
+      "type": "property",
+      "name": "Ahmedabad Textile Mills",
+      "price": 180,
+      "mortgageValue": 90,
+      "rent": {
+        "base": 14,
+        "colorSetDouble": 28,
+        "houses": [
+          70,
+          200,
+          550,
+          750
+        ],
+        "hotel": 950
+      },
+      "houseCost": 100,
+      "colorGroup": "orange",
+      "icon": "🧶",
+      "businessFact": "Textile mills turn fibres and yarn into materials for many industries."
+    },
+    {
+      "id": "india-chandigarh-research-park",
+      "type": "property",
+      "name": "Chandigarh Research Park",
+      "price": 200,
+      "mortgageValue": 100,
+      "rent": {
+        "base": 16,
+        "colorSetDouble": 32,
+        "houses": [
+          80,
+          220,
+          600,
+          800
+        ],
+        "hotel": 1000
+      },
+      "houseCost": 100,
+      "colorGroup": "orange",
+      "icon": "🔬",
+      "businessFact": "Research organisations help teams test ideas and develop prototypes."
+    },
+    {
+      "id": "free-parking",
+      "type": "freeParking",
+      "name": "Market Square"
+    },
+    {
+      "id": "india-kochi-marine-trade",
+      "type": "property",
+      "name": "Kochi Marine Trade",
+      "price": 220,
+      "mortgageValue": 110,
+      "rent": {
+        "base": 18,
+        "colorSetDouble": 36,
+        "houses": [
+          90,
+          250,
+          700,
+          875
+        ],
+        "hotel": 1050
+      },
+      "houseCost": 150,
+      "colorGroup": "red",
+      "icon": "🐟",
+      "businessFact": "Marine businesses serve fishing, shipping, and coastal supply chains."
+    },
+    {
+      "id": "chance-2",
+      "type": "chance",
+      "name": "Festival Opportunity"
+    },
+    {
+      "id": "india-chennai-mobility-corridor",
+      "type": "property",
+      "name": "Chennai Mobility Corridor",
+      "price": 220,
+      "mortgageValue": 110,
+      "rent": {
+        "base": 18,
+        "colorSetDouble": 36,
+        "houses": [
+          90,
+          250,
+          700,
+          875
+        ],
+        "hotel": 1050
+      },
+      "houseCost": 150,
+      "colorGroup": "red",
+      "icon": "🚘",
+      "businessFact": "Mobility businesses support vehicle design, production, and services."
+    },
+    {
+      "id": "india-gurugram-business-park",
+      "type": "property",
+      "name": "Gurugram Business Park",
+      "price": 240,
+      "mortgageValue": 120,
+      "rent": {
+        "base": 20,
+        "colorSetDouble": 40,
+        "houses": [
+          100,
+          300,
+          750,
+          925
+        ],
+        "hotel": 1100
+      },
+      "houseCost": 150,
+      "colorGroup": "red",
+      "icon": "🏢",
+      "businessFact": "Business districts provide space for professional and technology services."
+    },
+    {
+      "id": "india-chennai-port",
+      "type": "transport",
+      "name": "Chennai Port",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚢",
+      "businessFact": "Ports support coastal shipping and international trade."
+    },
+    {
+      "id": "india-noida-digital-district",
+      "type": "property",
+      "name": "Noida Digital District",
+      "price": 260,
+      "mortgageValue": 130,
+      "rent": {
+        "base": 22,
+        "colorSetDouble": 44,
+        "houses": [
+          110,
+          330,
+          800,
+          975
+        ],
+        "hotel": 1150
+      },
+      "houseCost": 150,
+      "colorGroup": "yellow",
+      "icon": "🖥️",
+      "businessFact": "Digital service teams build and maintain products for varied clients."
+    },
+    {
+      "id": "india-visakhapatnam-shipyard",
+      "type": "property",
+      "name": "Visakhapatnam Shipyard",
+      "price": 260,
+      "mortgageValue": 130,
+      "rent": {
+        "base": 22,
+        "colorSetDouble": 44,
+        "houses": [
+          110,
+          330,
+          800,
+          975
+        ],
+        "hotel": 1150
+      },
+      "houseCost": 150,
+      "colorGroup": "yellow",
+      "icon": "🚢",
+      "businessFact": "Shipbuilding brings together engineering, materials, and skilled trades."
+    },
+    {
+      "id": "india-city-water-works",
+      "type": "utility",
+      "name": "City Water Works",
+      "price": 150,
+      "mortgageValue": 75,
+      "diceMultipliers": [
+        4,
+        10
+      ],
+      "icon": "💧",
+      "businessFact": "Water utilities maintain essential supply and treatment systems."
+    },
+    {
+      "id": "india-indore-food-processing",
+      "type": "property",
+      "name": "Indore Food Processing",
+      "price": 280,
+      "mortgageValue": 140,
+      "rent": {
+        "base": 24,
+        "colorSetDouble": 48,
+        "houses": [
+          120,
+          360,
+          850,
+          1025
+        ],
+        "hotel": 1200
+      },
+      "houseCost": 150,
+      "colorGroup": "yellow",
+      "icon": "🌾",
+      "businessFact": "Food processing adds storage, packaging, and value to farm products."
+    },
+    {
+      "id": "go-to-jail",
+      "type": "goToJail",
+      "name": "GST Review"
+    },
+    {
+      "id": "india-surat-diamond-exchange",
+      "type": "property",
+      "name": "Surat Diamond Exchange",
+      "price": 300,
+      "mortgageValue": 150,
+      "rent": {
+        "base": 26,
+        "colorSetDouble": 52,
+        "houses": [
+          130,
+          390,
+          900,
+          1100
+        ],
+        "hotel": 1275
+      },
+      "houseCost": 200,
+      "colorGroup": "green",
+      "icon": "💎",
+      "businessFact": "Gem businesses coordinate cutting, grading, and responsible trade."
+    },
+    {
+      "id": "india-bengaluru-cloud-campus",
+      "type": "property",
+      "name": "Bengaluru Cloud Campus",
+      "price": 300,
+      "mortgageValue": 150,
+      "rent": {
+        "base": 26,
+        "colorSetDouble": 52,
+        "houses": [
+          130,
+          390,
+          900,
+          1100
+        ],
+        "hotel": 1275
+      },
+      "houseCost": 200,
+      "colorGroup": "green",
+      "icon": "☁️",
+      "businessFact": "Cloud services provide on-demand computing for organisations."
+    },
+    {
+      "id": "chest-3",
+      "type": "communityChest",
+      "name": "Community Fund"
+    },
+    {
+      "id": "india-mumbai-finance-centre",
+      "type": "property",
+      "name": "Mumbai Finance Centre",
+      "price": 320,
+      "mortgageValue": 160,
+      "rent": {
+        "base": 28,
+        "colorSetDouble": 56,
+        "houses": [
+          150,
+          450,
+          1000,
+          1200
+        ],
+        "hotel": 1400
+      },
+      "houseCost": 200,
+      "colorGroup": "green",
+      "icon": "🏦",
+      "businessFact": "Financial services connect savings, credit, payments, and investment."
+    },
+    {
+      "id": "india-howrah-junction",
+      "type": "transport",
+      "name": "Howrah Junction",
+      "price": 200,
+      "mortgageValue": 100,
+      "rentByCount": [
+        25,
+        50,
+        100,
+        200
+      ],
+      "icon": "🚉",
+      "businessFact": "Rail junctions coordinate services across busy routes."
+    },
+    {
+      "id": "chance-3",
+      "type": "chance",
+      "name": "Festival Opportunity"
+    },
+    {
+      "id": "india-delhi-renewable-energy-park",
+      "type": "property",
+      "name": "Delhi Renewable Energy Park",
+      "price": 350,
+      "mortgageValue": 175,
+      "rent": {
+        "base": 35,
+        "colorSetDouble": 70,
+        "houses": [
+          175,
+          500,
+          1100,
+          1300
+        ],
+        "hotel": 1500
+      },
+      "houseCost": 200,
+      "colorGroup": "darkBlue",
+      "icon": "☀️",
+      "businessFact": "Renewable energy projects combine generation, storage, and grid services."
+    },
+    {
+      "id": "luxury-tax",
+      "type": "luxuryTax",
+      "name": "Premium Levy",
+      "amount": 100
+    },
+    {
+      "id": "india-mumbai-global-trade-tower",
+      "type": "property",
+      "name": "Mumbai Global Trade Tower",
+      "price": 400,
+      "mortgageValue": 200,
+      "rent": {
+        "base": 50,
+        "colorSetDouble": 100,
+        "houses": [
+          200,
+          600,
+          1400,
+          1700
+        ],
+        "hotel": 2000
+      },
+      "houseCost": 200,
+      "colorGroup": "darkBlue",
+      "icon": "🌆",
+      "businessFact": "Global trade districts connect companies with finance and logistics."
+    }
+  ],
+  "cards": {
+    "chance": [
+      {
+        "id": "chance-move-launch",
+        "text": "A new opportunity takes you to Business Launch. Collect salary if you pass the launch.",
+        "effect": {
+          "type": "move",
+          "destination": 0,
+          "collectSalaryOnPass": true
+        }
+      },
+      {
+        "id": "chance-move-apex",
+        "text": "A new opportunity takes you to Mumbai Global Trade Tower. Collect salary if you pass the launch.",
+        "effect": {
+          "type": "move",
+          "destination": 39,
+          "collectSalaryOnPass": true
+        }
+      },
+      {
+        "id": "chance-move-air",
+        "text": "A new opportunity takes you to New Delhi Airport. Collect salary if you pass the launch.",
+        "effect": {
+          "type": "move",
+          "destination": 15,
+          "collectSalaryOnPass": true
+        }
+      },
+      {
+        "id": "chance-move-rail",
+        "text": "A new opportunity takes you to Mumbai Central Railway. Collect salary if you pass the launch.",
+        "effect": {
+          "type": "move",
+          "destination": 5,
+          "collectSalaryOnPass": true
+        }
+      },
+      {
+        "id": "chance-move-cobalt",
+        "text": "A new opportunity takes you to Gurugram Business Park. Collect salary if you pass the launch.",
+        "effect": {
+          "type": "move",
+          "destination": 24,
+          "collectSalaryOnPass": true
+        }
+      },
+      {
+        "id": "chance-move-back",
+        "text": "A route change sends you back three spaces.",
+        "effect": {
+          "type": "moveRelative",
+          "steps": -3,
+          "collectSalaryOnPass": false
+        }
+      },
+      {
+        "id": "chance-collect-award",
+        "text": "A Diwali market bonus is awarded. Collect ₹100.",
+        "effect": {
+          "type": "collect",
+          "amount": 100
+        }
+      },
+      {
+        "id": "chance-collect-dividend",
+        "text": "A community business grant is approved. Collect ₹50.",
+        "effect": {
+          "type": "collect",
+          "amount": 50
+        }
+      },
+      {
+        "id": "chance-pay-consultant",
+        "text": "Pay a business service fee of ₹50.",
+        "effect": {
+          "type": "pay",
+          "amount": 50
+        }
+      },
+      {
+        "id": "chance-pay-fee",
+        "text": "A GST filing review is due. Pay ₹15.",
+        "effect": {
+          "type": "pay",
+          "amount": 15
+        }
+      },
+      {
+        "id": "chance-repairs",
+        "text": "Monsoon maintenance: pay ₹25 per house and ₹100 per hotel.",
+        "effect": {
+          "type": "repair",
+          "houseCost": 25,
+          "hotelCost": 100
+        }
+      },
+      {
+        "id": "chance-jail",
+        "text": "A paperwork review pauses your plans. Go to the inspection office.",
+        "effect": {
+          "type": "jail"
+        }
+      },
+      {
+        "id": "chance-release",
+        "text": "Keep this document to leave the inspection office without a fee.",
+        "effect": {
+          "type": "getOutOfJailFree"
+        }
+      },
+      {
+        "id": "chance-pay-players",
+        "text": "Support the founders' network. Pay each player ₹25.",
+        "effect": {
+          "type": "payEachPlayer",
+          "amount": 25
+        }
+      },
+      {
+        "id": "chance-collect-royalty",
+        "text": "A community business grant is approved. Collect ₹75.",
+        "effect": {
+          "type": "collect",
+          "amount": 75
+        }
+      },
+      {
+        "id": "chance-pay-transport",
+        "text": "Pay a business service fee of ₹40.",
+        "effect": {
+          "type": "pay",
+          "amount": 40
+        }
+      }
+    ],
+    "communityChest": [
+      {
+        "id": "chest-collect-refund",
+        "text": "A community business grant is approved. Collect ₹20.",
+        "effect": {
+          "type": "collect",
+          "amount": 20
+        }
+      },
+      {
+        "id": "chest-collect-grant",
+        "text": "A community business grant is approved. Collect ₹100.",
+        "effect": {
+          "type": "collect",
+          "amount": 100
+        }
+      },
+      {
+        "id": "chest-collect-sale",
+        "text": "A community business grant is approved. Collect ₹50.",
+        "effect": {
+          "type": "collect",
+          "amount": 50
+        }
+      },
+      {
+        "id": "chest-collect-bonus",
+        "text": "A community business grant is approved. Collect ₹25.",
+        "effect": {
+          "type": "collect",
+          "amount": 25
+        }
+      },
+      {
+        "id": "chest-collect-legacy",
+        "text": "A community business grant is approved. Collect ₹100.",
+        "effect": {
+          "type": "collect",
+          "amount": 100
+        }
+      },
+      {
+        "id": "chest-collect-insurance",
+        "text": "A community business grant is approved. Collect ₹20.",
+        "effect": {
+          "type": "collect",
+          "amount": 20
+        }
+      },
+      {
+        "id": "chest-collect-bank",
+        "text": "A community business grant is approved. Collect ₹50.",
+        "effect": {
+          "type": "collect",
+          "amount": 50
+        }
+      },
+      {
+        "id": "chest-move-launch",
+        "text": "A new opportunity takes you to Business Launch. Collect salary if you pass the launch.",
+        "effect": {
+          "type": "move",
+          "destination": 0,
+          "collectSalaryOnPass": true
+        }
+      },
+      {
+        "id": "chest-pay-tax",
+        "text": "Pay a business service fee of ₹50.",
+        "effect": {
+          "type": "pay",
+          "amount": 50
+        }
+      },
+      {
+        "id": "chest-pay-clinic",
+        "text": "Pay a business service fee of ₹50.",
+        "effect": {
+          "type": "pay",
+          "amount": 50
+        }
+      },
+      {
+        "id": "chest-pay-repairs",
+        "text": "Monsoon maintenance: pay ₹40 per house and ₹115 per hotel.",
+        "effect": {
+          "type": "repair",
+          "houseCost": 40,
+          "hotelCost": 115
+        }
+      },
+      {
+        "id": "chest-pay-players",
+        "text": "Support the founders' network. Pay each player ₹10.",
+        "effect": {
+          "type": "payEachPlayer",
+          "amount": 10
+        }
+      },
+      {
+        "id": "chest-jail",
+        "text": "A paperwork review pauses your plans. Go to the inspection office.",
+        "effect": {
+          "type": "jail"
+        }
+      },
+      {
+        "id": "chest-release",
+        "text": "Keep this document to leave the inspection office without a fee.",
+        "effect": {
+          "type": "getOutOfJailFree"
+        }
+      },
+      {
+        "id": "chest-collect-dividend",
+        "text": "A community business grant is approved. Collect ₹25.",
+        "effect": {
+          "type": "collect",
+          "amount": 25
+        }
+      },
+      {
+        "id": "chest-pay-maintenance",
+        "text": "Pay a business service fee of ₹100.",
+        "effect": {
+          "type": "pay",
+          "amount": 100
+        }
+      }
+    ]
+  },
+  "description": "A business journey across Indian cities, infrastructure, and industries."
+}

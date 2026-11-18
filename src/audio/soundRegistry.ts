@@ -14,6 +14,7 @@ export const SOUND_IDS = [
 
 export type SoundId = (typeof SOUND_IDS)[number];
 export type SoundAssets = Partial<Record<SoundId, string>>;
+export const SOUND_ASSETS: SoundAssets = {};
 
 const TONES: Record<SoundId, { frequency: number; duration: number }> = {
   diceRoll: { frequency: 105, duration: 0.2 },

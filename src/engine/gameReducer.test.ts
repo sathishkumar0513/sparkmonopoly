@@ -8,6 +8,7 @@ import {
   getAvailableActions,
   getBuildingSupply,
   getManagementActionReason,
+  MAX_EVENT_LOG_ENTRIES,
   validateTrade,
 } from "./gameReducer";
 import { nextRandom } from "./random";
@@ -51,6 +52,32 @@ function withPlayer(
     ),
   };
 }
+
+describe("bounded event history", () => {
+  it("caps the reducer log and preserves the undo boundary after trimming", () => {
+    const state = makeGame();
+    const seededLog = Array.from({ length: MAX_EVENT_LOG_ENTRIES }, (_, index) => ({
+      id: index + 1,
+      type: "TEST",
+      playerId: null,
+      details: {},
+    }));
+    const fullState = {
+      ...state,
+      eventLog: seededLog,
+      nextEventId: MAX_EVENT_LOG_ENTRIES + 1,
+    };
+
+    const rolled = gameReducer(fullState, { type: "ROLL_DICE" });
+    expect(rolled.eventLog).toHaveLength(MAX_EVENT_LOG_ENTRIES);
+    expect(rolled.eventLog[0]?.id).toBe(2);
+
+    const undone = gameReducer(rolled, { type: "UNDO" });
+    expect(undone.eventLog).toHaveLength(MAX_EVENT_LOG_ENTRIES);
+    expect(undone.eventLog.at(-1)?.type).toBe("ACTION_UNDONE");
+    expect(undone.eventLog.some((event) => event.type === "ROLL_DICE")).toBe(false);
+  });
+});
 
 describe("rent calculation", () => {
   it("uses base rent, doubles a complete clear color group, and uses building rent", () => {
@@ -560,6 +587,7 @@ describe("available actions", () => {
     };
     expect(getAvailableActions(state).map((action) => action.type)).toEqual([
       "ROLL_DICE",
+      "RESIGN",
       "PAY_JAIL_FINE",
     ]);
     const heldCard = withPlayer(state, "p1", (player) => ({

@@ -5,6 +5,8 @@ export interface PlayerSetup {
   name: string;
   isBot?: boolean;
   botDifficulty?: "easy" | "medium";
+  token?: string;
+  color?: string;
 }
 
 export interface GameOptions {
@@ -27,6 +29,8 @@ export interface PropertyHolding {
 export interface Player {
   id: string;
   name: string;
+  token?: string;
+  color?: string;
   isBot: boolean;
   botDifficulty: "easy" | "medium";
   cash: number;
@@ -121,7 +125,7 @@ export interface UndoFrame {
   winnerId: string | null;
   freeParkingPot: number;
   afterLandingPhase: "roll" | "endTurn";
-  eventLogLength: number;
+  eventLogLastId: number;
 }
 
 export interface GameState {
@@ -166,6 +170,7 @@ export type GameAction =
   | { type: "RESOLVE_CARD" }
   | { type: "PAY_DEBT" }
   | { type: "DECLARE_BANKRUPTCY" }
+  | { type: "RESIGN" }
   | { type: "PROPOSE_TRADE"; offer: TradeOffer }
   | { type: "ACCEPT_TRADE" }
   | { type: "REJECT_TRADE" }

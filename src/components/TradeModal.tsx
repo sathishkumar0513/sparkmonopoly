@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { getAvailableActions, validateTrade } from "../engine/gameReducer";
 import type { GameAction, GameState, Player, TradeOffer } from "../engine/types";
+import { localizedName } from "../i18n/themeText";
+import { formatMoney } from "../themes/formatMoney";
+import { useDialogFocus } from "./useDialogFocus";
+import { useMotionLevel } from "../ui/useMotionLevel";
+import { MOTION_MS, MOTION_SPRING } from "../ui/motion";
 
 interface TradeModalProps {
   state: GameState;
@@ -25,7 +32,12 @@ function emptyOffer(from: Player, to: Player): TradeOffer {
 }
 
 export function TradeModal({ state, open, busy, onAction, onClose }: TradeModalProps) {
-  const reducedMotion = useReducedMotion();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? "en";
+  const motionLevel = useMotionLevel();
+  const reducedMotion = motionLevel !== "full";
+  const motionOff = motionLevel === "off";
+  const dialogRef = useRef<HTMLElement>(null);
   const [draft, setDraft] = useState<TradeOffer | null>(null);
   const [composing, setComposing] = useState(false);
   const pending = state.pendingTrade?.offer ?? null;
@@ -39,6 +51,7 @@ export function TradeModal({ state, open, busy, onAction, onClose }: TradeModalP
     [draft, state],
   );
   const can = (type: GameAction["type"]) => actions.some((action) => action.type === type);
+  useDialogFocus(dialogRef, (open || Boolean(pending)) && !busy);
 
   useEffect(() => {
     if (pending) {
@@ -89,34 +102,38 @@ export function TradeModal({ state, open, busy, onAction, onClose }: TradeModalP
         <motion.div
           key="trade-modal"
           className="modal-scrim"
-          initial={{ opacity: 0 }}
+          initial={motionOff ? false : { opacity: 0 }}
           animate={{ opacity: 1, pointerEvents: "auto" }}
-          exit={{ opacity: 0, pointerEvents: "none" }}
+          exit={motionOff ? undefined : { opacity: 0, pointerEvents: "none" }}
+          transition={{ duration: motionOff ? 0 : reducedMotion ? 0.01 : MOTION_MS.button / 1000 }}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget && !pending) onClose();
           }}
         >
           <motion.section
+            ref={dialogRef}
+            tabIndex={-1}
             className="gameplay-modal trade-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="trade-title"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            initial={motionOff ? false : reducedMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={motionOff ? undefined : reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+            transition={motionOff ? { duration: 0 } : reducedMotion ? { duration: MOTION_MS.reduced / 1000 } : MOTION_SPRING.modal}
           >
             {composing && draft ? (
               <>
-                <span className="eyebrow">{pending ? "Counter proposal" : "Negotiation"}</span>
-                <h2 id="trade-title">{pending ? "Make a counter-offer" : "Create a trade"}</h2>
+                <span className="eyebrow">{pending ? t("trade.counterProposal") : t("trade.negotiation")}</span>
+                <h2 id="trade-title">{pending ? t("trade.makeCounter") : t("trade.create")}</h2>
                 <p className="modal-description">
                   {pending
-                    ? `Pass the device to ${state.players.find((player) => player.id === draft.fromPlayerId)?.name} to prepare a counter.`
-                    : "Choose what you offer and what you want in return."}
+                    ? t("trade.counterDevice", { name: state.players.find((player) => player.id === draft.fromPlayerId)?.name })
+                    : t("trade.chooseOffer")}
                 </p>
                 {!pending ? (
                   <label className="trade-partner-select">
-                    Trade partner
+                    {t("trade.partner")}
                     <select
                       value={draft.toPlayerId}
                       onChange={(event) => {
@@ -134,7 +151,7 @@ export function TradeModal({ state, open, busy, onAction, onClose }: TradeModalP
                   <TradeSide
                     state={state}
                     playerId={draft.fromPlayerId}
-                    title="You give"
+                    title={t("trade.youGive")}
                     cash={draft.cashFrom}
                     properties={draft.propertiesFrom}
                     jailCards={draft.jailCardsFrom}
@@ -145,7 +162,7 @@ export function TradeModal({ state, open, busy, onAction, onClose }: TradeModalP
                   <TradeSide
                     state={state}
                     playerId={draft.toPlayerId}
-                    title="You receive"
+                    title={t("trade.youReceive")}
                     cash={draft.cashTo}
                     properties={draft.propertiesTo}
                     jailCards={draft.jailCardsTo}
@@ -155,36 +172,36 @@ export function TradeModal({ state, open, busy, onAction, onClose }: TradeModalP
                   />
                 </div>
                 <div className="trade-totals">
-                  <span>Value given <b>{money(tradeValue(state, draft.fromPlayerId, draft.cashFrom, draft.propertiesFrom, draft.jailCardsFrom.length), state)}</b></span>
-                  <span>Value received <b>{money(tradeValue(state, draft.toPlayerId, draft.cashTo, draft.propertiesTo, draft.jailCardsTo.length), state)}</b></span>
+                  <span>{t("trade.valueGiven")} <b>{money(tradeValue(state, draft.fromPlayerId, draft.cashFrom, draft.propertiesFrom, draft.jailCardsFrom.length), state, language)}</b></span>
+                  <span>{t("trade.valueReceived")} <b>{money(tradeValue(state, draft.toPlayerId, draft.cashTo, draft.propertiesTo, draft.jailCardsTo.length), state, language)}</b></span>
                 </div>
                 {errors.length > 0 ? (
                   <ul className="trade-errors" role="alert">
-                    {errors.map((error) => <li key={error}>{error}</li>)}
+                    {errors.map((error) => <li key={error}>{translateTradeError(error, state, t, language)}</li>)}
                   </ul>
                 ) : null}
                 <div className="modal-actions">
                   <button className="primary-button" disabled={errors.length > 0} onClick={submit}>
-                    {pending ? "Send counter-offer" : "Send offer"}
+                    {pending ? t("trade.sendCounter") : t("trade.sendOffer")}
                   </button>
                   <button className="secondary-button" onClick={() => pending ? setComposing(false) : onClose()}>
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                 </div>
               </>
             ) : pending ? (
               <div className="trade-response">
-                <span className="eyebrow">Pass the device to {currentResponder?.name ?? "your partner"}</span>
-                <h2 id="trade-title">Trade offer from {state.players.find((player) => player.id === pending.fromPlayerId)?.name}</h2>
+                <span className="eyebrow">{t("trade.passDevice", { name: currentResponder?.name ?? t("trade.yourPartner") })}</span>
+                <h2 id="trade-title">{t("trade.offerFrom", { name: state.players.find((player) => player.id === pending.fromPlayerId)?.name })}</h2>
                 <TradeSummary state={state} offer={pending} />
-                <p className="pass-device-note">Review both sides before responding. The offer stays private to this screen.</p>
+                <p className="pass-device-note">{t("trade.review")}</p>
                 {currentResponder?.isBot ? (
-                  <p className="thinking-note" role="status">Thinking… the offer will be accepted or declined shortly.</p>
+                  <p className="thinking-note" role="status">{t("trade.thinking")}</p>
                 ) : (
                   <div className="modal-actions">
-                    <button className="primary-button" disabled={!can("ACCEPT_TRADE")} onClick={() => onAction({ type: "ACCEPT_TRADE" }, "coin")}>Accept trade</button>
-                    <button className="secondary-button" disabled={!can("REJECT_TRADE")} onClick={() => onAction({ type: "REJECT_TRADE" })}>Reject</button>
-                    <button className="secondary-button" onClick={startCounter}>Counter</button>
+                    <button className="primary-button" disabled={!can("ACCEPT_TRADE")} onClick={() => onAction({ type: "ACCEPT_TRADE" }, "coin")}>{t("trade.accept")}</button>
+                    <button className="secondary-button" disabled={!can("REJECT_TRADE")} onClick={() => onAction({ type: "REJECT_TRADE" })}>{t("trade.reject")}</button>
+                    <button className="secondary-button" onClick={startCounter}>{t("trade.counter")}</button>
                   </div>
                 )}
               </div>
@@ -219,6 +236,8 @@ function TradeSide({
   onProperties: (value: string[]) => void;
   onCards: (value: string[]) => void;
 }) {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? "en";
   const player = state.players.find((candidate) => candidate.id === playerId);
   if (!player) return null;
   const ownedTiles = state.theme.tiles.filter((tile) => player.properties[tile.id]);
@@ -226,7 +245,7 @@ function TradeSide({
     <fieldset className="trade-side" disabled={readOnly}>
       <legend>{title} · {player.name}</legend>
       <label>
-        Cash
+        {t("trade.cash")}
         <input
           type="number"
           min="0"
@@ -237,8 +256,8 @@ function TradeSide({
         />
       </label>
       <div className="trade-checklist">
-        <strong>Properties</strong>
-        {ownedTiles.length === 0 ? <span className="muted-copy">No properties owned</span> : ownedTiles.map((tile) => (
+        <strong>{t("trade.properties")}</strong>
+        {ownedTiles.length === 0 ? <span className="muted-copy">{t("trade.noProperties")}</span> : ownedTiles.map((tile) => (
           <label key={tile.id}>
             <input
               type="checkbox"
@@ -247,13 +266,13 @@ function TradeSide({
                 ? [...properties, tile.id]
                 : properties.filter((id) => id !== tile.id))}
             />
-            {tile.name}{player.properties[tile.id]?.mortgaged ? " · mortgaged" : ""}
+            {localizedName(tile, language)}{player.properties[tile.id]?.mortgaged ? ` ${t("trade.mortgaged")}` : ""}
           </label>
         ))}
       </div>
       <div className="trade-checklist">
-        <strong>Release cards</strong>
-        {player.jailCards.length === 0 ? <span className="muted-copy">No cards held</span> : player.jailCards.map((cardId, index) => (
+        <strong>{t("trade.releaseCards")}</strong>
+        {player.jailCards.length === 0 ? <span className="muted-copy">{t("trade.noCards")}</span> : player.jailCards.map((cardId, index) => (
           <label key={`${cardId}-${index}`}>
             <input
               type="checkbox"
@@ -262,7 +281,7 @@ function TradeSide({
                 ? [...jailCards, cardId]
                 : jailCards.filter((id, cardIndex) => id !== cardId || cardIndex !== jailCards.indexOf(cardId)))}
             />
-            Get-out-of-jail card
+            {t("trade.getOutCard")}
           </label>
         ))}
       </div>
@@ -271,26 +290,28 @@ function TradeSide({
 }
 
 function TradeSummary({ state, offer }: { state: GameState; offer: TradeOffer }) {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? "en";
   const from = state.players.find((player) => player.id === offer.fromPlayerId);
   const to = state.players.find((player) => player.id === offer.toPlayerId);
   return (
     <div className="trade-summary">
       <section>
-        <strong>{from?.name} gives</strong>
-        <span>{money(offer.cashFrom, state)} cash</span>
-        {offer.propertiesFrom.map((id) => <span key={id}>{tileName(state, id)}</span>)}
-        {offer.jailCardsFrom.length > 0 ? <span>{offer.jailCardsFrom.length} release card(s)</span> : null}
+        <strong>{t("trade.youGiveSummary", { name: from?.name })}</strong>
+        <span>{money(offer.cashFrom, state, language)} {t("trade.cash").toLowerCase()}</span>
+        {offer.propertiesFrom.map((id) => <span key={id}>{tileName(state, id, language)}</span>)}
+        {offer.jailCardsFrom.length > 0 ? <span>{offer.jailCardsFrom.length} {t("trade.releaseCards").toLowerCase()}</span> : null}
       </section>
       <span className="trade-swap" aria-hidden="true">⇄</span>
       <section>
-        <strong>{to?.name} gives</strong>
-        <span>{money(offer.cashTo, state)} cash</span>
-        {offer.propertiesTo.map((id) => <span key={id}>{tileName(state, id)}</span>)}
-        {offer.jailCardsTo.length > 0 ? <span>{offer.jailCardsTo.length} release card(s)</span> : null}
+        <strong>{t("trade.youReceiveSummary", { name: to?.name })}</strong>
+        <span>{money(offer.cashTo, state, language)} {t("trade.cash").toLowerCase()}</span>
+        {offer.propertiesTo.map((id) => <span key={id}>{tileName(state, id, language)}</span>)}
+        {offer.jailCardsTo.length > 0 ? <span>{offer.jailCardsTo.length} {t("trade.releaseCards").toLowerCase()}</span> : null}
       </section>
       <div className="trade-response-totals">
-        <span>{from?.name}: <b>{money(tradeValue(state, offer.fromPlayerId, offer.cashFrom, offer.propertiesFrom, offer.jailCardsFrom.length), state)}</b></span>
-        <span>{to?.name}: <b>{money(tradeValue(state, offer.toPlayerId, offer.cashTo, offer.propertiesTo, offer.jailCardsTo.length), state)}</b></span>
+        <span>{from?.name}: <b>{money(tradeValue(state, offer.fromPlayerId, offer.cashFrom, offer.propertiesFrom, offer.jailCardsFrom.length), state, language)}</b></span>
+        <span>{to?.name}: <b>{money(tradeValue(state, offer.toPlayerId, offer.cashTo, offer.propertiesTo, offer.jailCardsTo.length), state, language)}</b></span>
       </div>
     </div>
   );
@@ -312,13 +333,60 @@ function tradeValue(
   }, 0);
 }
 
-function tileName(state: GameState, tileId: string) {
-  return state.theme.tiles.find((tile) => tile.id === tileId)?.name ?? tileId;
+function tileName(state: GameState, tileId: string, language: string) {
+  const tile = state.theme.tiles.find((candidate) => candidate.id === tileId);
+  return tile ? localizedName(tile, language) : tileId;
 }
 
-function money(amount: number, state: GameState) {
-  const value = amount.toLocaleString("en-US");
-  return state.theme.currency.format === "before"
-    ? `${state.theme.currency.symbol}${value}`
-    : `${value}${state.theme.currency.symbol}`;
+function money(amount: number, state: GameState, language: string) {
+  return formatMoney(amount, state.theme.currency, language);
+}
+
+function translateTradeError(
+  error: string,
+  state: GameState,
+  t: TFunction,
+  language: string,
+): string {
+  const staticErrors: Record<string, string> = {
+    "Both trade partners must be in the game.": "bothPartners",
+    "Choose a different trade partner.": "differentPartner",
+    "Include cash, property, or a release card in the trade.": "includeAsset",
+    "Bankrupt players cannot trade.": "bankrupt",
+    "Cash offers must be non-negative whole numbers.": "cashWholeNumber",
+    "A property can only appear once in a trade.": "propertyOnce",
+    "A release card can only appear once in a trade.": "cardOnce",
+  };
+  const staticKey = staticErrors[error];
+  if (staticKey) return t(`trade.errors.${staticKey}`);
+
+  const cashPlayer = state.players.find((player) =>
+    error === `${player.name} does not have enough cash.`,
+  );
+  if (cashPlayer) return t("trade.errors.notEnoughCash", { name: cashPlayer.name });
+  const cardPlayer = state.players.find((player) =>
+    error === `${player.name} does not hold that release card.`,
+  );
+  if (cardPlayer) return t("trade.errors.noReleaseCard", { name: cardPlayer.name });
+  const interestPlayer = state.players.find((player) =>
+    error === `${player.name} needs more cash to accept mortgage interest.`,
+  );
+  if (interestPlayer) return t("trade.errors.mortgageInterest", { name: interestPlayer.name });
+
+  const ownershipError = /^(.*?) does not own (.+)\.$/.exec(error);
+  if (ownershipError) {
+    const tile = state.theme.tiles.find((candidate) =>
+      candidate.name === ownershipError[2] || candidate.id === ownershipError[2],
+    );
+    return t("trade.errors.notOwned", {
+      name: ownershipError[1],
+      property: tile ? localizedName(tile, language) : ownershipError[2],
+    });
+  }
+  for (const group of ["brown", "lightBlue", "pink", "orange", "red", "yellow", "green", "darkBlue"] as const) {
+    if (error === `Sell all buildings in ${group} before trading its properties.`) {
+      return t("trade.errors.sellBuildings", { group: t(`trade.color.${group}`) });
+    }
+  }
+  return error;
 }

@@ -1,13 +1,18 @@
 import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
-import type { CSSProperties } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import type { CSSProperties, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { GameState } from "../engine/types";
 import type { Tile } from "../themes/themeSchema";
+import { formatMoney } from "../themes/formatMoney";
+import { localizedName } from "../i18n/themeText";
 import { selectTileOwner } from "../store/gameStore";
+import { MOTION_EASE, MOTION_MS, MOTION_SPRING } from "../ui/motion";
 import { tileGridPosition } from "./boardLayout";
 
 const TOKEN_DESIGNS = ["🚗", "🎩", "🚢", "🐕", "🚀", "🦊"];
 const PLAYER_COLORS = ["#ff806d", "#55c8a7", "#bd91ff", "#ffcb68", "#63b4ff", "#ff82bb"];
+const GROUP_MARKS = ["brown", "lightBlue", "pink", "orange", "red", "yellow", "green", "darkBlue"];
 
 interface BoardProps {
   state: GameState;
@@ -17,6 +22,10 @@ interface BoardProps {
   onSelectTile: (tileId: string) => void;
   motionDisabled: boolean;
   jailReleased: boolean;
+  centerContent: ReactNode;
+  landedTileIndex: number | null;
+  idleActiveToken: boolean;
+  cameraFollow: boolean;
 }
 
 interface TileCardProps {
@@ -24,15 +33,18 @@ interface TileCardProps {
   index: number;
   ownerName: string | null;
   ownerIndex: number;
+  groupMark: number;
   level: number;
   mortgaged: boolean;
   selected: boolean;
-  tokens: { id: string; name: string; icon: string; color: string; jailed: boolean }[];
+  tokens: { id: string; name: string; icon: string; color: string; jailed: boolean; idle: boolean }[];
   currency: GameState["theme"]["currency"];
+  language: string;
   motionDisabled: boolean;
   goFlash: boolean;
   jailBars: boolean;
   jailReleased: boolean;
+  landed: boolean;
   onSelect: (tileId: string) => void;
 }
 
@@ -44,12 +56,19 @@ export function Board({
   onSelectTile,
   motionDisabled,
   jailReleased,
+  centerContent,
+  landedTileIndex,
+  idleActiveToken,
+  cameraFollow,
 }: BoardProps) {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? "en";
   const tokenKey = state.players
     .map((player) => `${player.id}:${player.position}:${player.bankrupt}`)
     .join("|");
   const tokensByTile = useMemo(() => {
-    const result = new Map<number, { id: string; name: string; icon: string; color: string; jailed: boolean }[]>();
+    const activePlayerId = state.auction?.activePlayerId ?? state.players[state.currentPlayerIndex]?.id;
+    const result = new Map<number, { id: string; name: string; icon: string; color: string; jailed: boolean; idle: boolean }[]>();
     state.players.forEach((player, index) => {
       if (player.bankrupt) return;
       const position = visualPositions[player.id] ?? player.position;
@@ -57,23 +76,37 @@ export function Board({
       tokens.push({
         id: player.id,
         name: player.name,
-        icon: TOKEN_DESIGNS[index % TOKEN_DESIGNS.length],
-        color: PLAYER_COLORS[index % PLAYER_COLORS.length],
+        icon: player.token ?? TOKEN_DESIGNS[index % TOKEN_DESIGNS.length],
+        color: player.color ?? PLAYER_COLORS[index % PLAYER_COLORS.length],
         jailed:
           player.id === state.players[state.currentPlayerIndex]?.id &&
           state.phase === "jail",
+        idle: player.id === activePlayerId && idleActiveToken,
       });
       result.set(position, tokens);
     });
     return result;
-  }, [state.currentPlayerIndex, state.phase, tokenKey, visualPositions]);
+  }, [idleActiveToken, state.auction?.activePlayerId, state.currentPlayerIndex, state.phase, tokenKey, visualPositions]);
+  const activePlayerId = state.auction?.activePlayerId ?? state.players[state.currentPlayerIndex]?.id;
+  const activePlayer = state.players.find((player) => player.id === activePlayerId);
+  const activePosition = activePlayer
+    ? visualPositions[activePlayer.id] ?? activePlayer.position
+    : 0;
+  const cameraTile = tileGridPosition(activePosition);
 
   return (
-    <div className={`board-frame ${state.phase === "roll" ? "board-frame-active" : ""}`}>
+    <div
+      className={`board-frame ${state.phase === "roll" ? "board-frame-active" : ""}`}
+      data-camera-follow={cameraFollow || undefined}
+      style={{
+        "--camera-x": `${(6 - cameraTile.column) * 2.5}px`,
+        "--camera-y": `${(6 - cameraTile.row) * 2.5}px`,
+      } as CSSProperties}
+    >
       <div
         className="board-grid"
         role="grid"
-        aria-label={`${state.theme.name} 40-space business board`}
+        aria-label={t("game.boardTitle", { theme: localizedName(state.theme, language) })}
         style={{
           "--board-primary": state.theme.palette.primary,
           "--board-secondary": state.theme.palette.secondary,
@@ -91,33 +124,28 @@ export function Board({
               index={index}
               ownerName={owner?.name ?? null}
               ownerIndex={ownerIndex}
+              groupMark={tile.type === "property" ? GROUP_MARKS.indexOf(tile.colorGroup) + 1 : 0}
               level={holding?.level ?? 0}
               mortgaged={holding?.mortgaged ?? false}
               selected={selectedTileId === tile.id}
               tokens={tokensByTile.get(index) ?? EMPTY_TOKENS}
               currency={state.theme.currency}
+              language={language}
               motionDisabled={motionDisabled}
               goFlash={tile.type === "go" && goFlash}
               jailBars={tile.type === "jail" && state.phase === "jail"}
               jailReleased={tile.type === "jail" && jailReleased}
+              landed={landedTileIndex === index}
               onSelect={onSelectTile}
             />
           );
         })}
-        <section className="board-centre">
-          <div className="centre-orbit" aria-hidden="true">✦</div>
-          <span className="eyebrow">{state.theme.name} edition</span>
-          <h2>Make your<br />next big move.</h2>
-          <p>Build smart. Grow together.</p>
-          <div className="centre-stats">
-            <span><strong>40</strong> opportunities</span>
-            <span><strong>{state.players.filter((player) => !player.bankrupt).length}</strong> founders</span>
-          </div>
-          <span className="centre-watermark">BT</span>
+        <section className="board-centre board-centre-controls">
+          {centerContent}
         </section>
       </div>
-      <span className="board-caption">Tap any space to inspect its details</span>
-      {motionDisabled ? <span className="sr-only">Reduced motion is enabled.</span> : null}
+      <span className="board-caption">{t("game.inspectSpace")}</span>
+      {motionDisabled ? <span className="sr-only">{t("game.reducedMotion")}</span> : null}
     </div>
   );
 }
@@ -129,17 +157,21 @@ const MemoTileCard = memo(function TileCard({
   index,
   ownerName,
   ownerIndex,
+  groupMark,
   level,
   mortgaged,
   selected,
   tokens,
   currency,
+  language,
   motionDisabled,
   goFlash,
   jailBars,
   jailReleased,
+  landed,
   onSelect,
 }: TileCardProps) {
+  const { t } = useTranslation();
   const position = tileGridPosition(index);
   const corner = tile.type === "go" || tile.type === "jail" || tile.type === "freeParking" || tile.type === "goToJail";
   const groupColor = tile.type === "property" ? GROUP_COLORS[tile.colorGroup] : undefined;
@@ -150,7 +182,8 @@ const MemoTileCard = memo(function TileCard({
     <motion.button
       type="button"
       role="gridcell"
-      className={`board-tile tile-${position.side} ${corner ? "tile-corner" : ""} ${selected ? "tile-selected" : ""} ${mortgaged ? "tile-mortgaged" : ""} ${goFlash ? "tile-go-flash" : ""}`}
+      className={`board-tile tile-${position.side} ${corner ? "tile-corner" : ""} ${selected ? "tile-selected" : ""} ${mortgaged ? "tile-mortgaged" : ""} ${goFlash ? "tile-go-flash" : ""} ${landed ? "tile-landed" : ""}`}
+      data-group-mark={groupMark || undefined}
       style={{
         gridRow: position.row,
         gridColumn: position.column,
@@ -158,11 +191,11 @@ const MemoTileCard = memo(function TileCard({
         "--owner-color": ownerIndex >= 0 ? PLAYER_COLORS[ownerIndex % PLAYER_COLORS.length] : "transparent",
       } as CSSProperties}
       onClick={() => onSelect(tile.id)}
-      aria-label={`${tile.name}${price === null ? "" : `, price ${formatPrice(price, currency)}`}${ownerName ? `, owned by ${ownerName}` : ""}`}
+      aria-label={`${localizedName(tile, language)}${price === null ? "" : `, ${formatPrice(price, currency, language)}`}${ownerName ? `, ${t("game.ownedBy", { name: ownerName })}` : ""}${level > 0 ? `, ${level === 5 ? t("game.hotel") : t("game.housesCount", { count: level })}` : ""}${mortgaged ? `, ${t("game.mortgaged")}` : ""}`}
       aria-pressed={selected}
       whileHover={motionDisabled ? undefined : { y: -3, scale: 1.035 }}
       whileTap={motionDisabled ? undefined : { scale: 0.97 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: MOTION_MS.tile / 1000, ease: [...MOTION_EASE.standard] }}
     >
       {tile.type === "property" ? <span className="tile-color-band" /> : null}
       {jailBars || jailReleased ? (
@@ -172,27 +205,55 @@ const MemoTileCard = memo(function TileCard({
         />
       ) : null}
       {goFlash && tile.type === "go" ? (
-        <span className="go-salary-pop" aria-label="Salary collected">+${tile.salary}</span>
+        <>
+          <span className="go-salary-pop" aria-label={t("game.salaryCollected")}>+{formatPrice(tile.salary, currency, language)}</span>
+          <span className="go-coin-shower" aria-hidden="true">
+            {Array.from({ length: 7 }, (_, coin) => <i key={coin}>●</i>)}
+          </span>
+        </>
       ) : null}
-      {ownerName ? <span className="owner-flag" title={`Owned by ${ownerName}`} /> : null}
-      {mortgaged ? <span className="mortgage-mark" aria-label="Mortgaged">M</span> : null}
+      {landed ? <span className="tile-landing-sparkle" aria-hidden="true">✦</span> : null}
+      {ownerName ? <span className="owner-flag" title={t("game.ownedBy", { name: ownerName })} aria-hidden="true">P{ownerIndex + 1}</span> : null}
+      {mortgaged ? <span className="mortgage-mark" aria-label={t("game.mortgaged")}>M</span> : null}
       <span className={`tile-content ${position.side !== "corner" ? `tile-content-${position.side}` : ""}`}>
         <span className="tile-icon" aria-hidden="true">
           {"icon" in tile ? tile.icon : corner ? cornerIcon(tile.type) : tile.type === "chance" ? "✨" : tile.type === "communityChest" ? "🎁" : tile.type === "incomeTax" || tile.type === "luxuryTax" ? "🧾" : "•"}
         </span>
-        <span className="tile-name">{tile.name}</span>
-        {price !== null ? <span className="tile-price">{formatPrice(price, currency)}</span> : null}
+        <span className="tile-name">{localizedName(tile, language)}</span>
+        {price !== null ? <span className="tile-price">{formatPrice(price, currency, language)}</span> : null}
       </span>
       {unitCount > 0 ? (
         <motion.span
-          key={`${tile.id}-${level}`}
+          key={tile.id}
           className={`building-markers ${level === 5 ? "hotel-marker" : ""}`}
-          aria-label={level === 5 ? "Hotel" : `${level} houses`}
-          initial={motionDisabled ? { opacity: 1 } : { opacity: 0, scale: 0.45, y: 3 }}
+          aria-label={level === 5 ? t("game.hotel") : t("game.housesCount", { count: level })}
+          initial={false}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 360, damping: 17 }}
+          transition={motionDisabled ? { duration: 0 } : MOTION_SPRING.pop}
         >
-          {level === 5 ? "🏨" : Array.from({ length: unitCount }, (_, marker) => <i key={marker} />)}
+          <AnimatePresence>
+            {level === 5 ? (
+              <motion.span
+                key="hotel"
+                initial={motionDisabled ? false : { opacity: 0, scale: 0.45, y: 3 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={motionDisabled ? undefined : { opacity: 0, scale: 0.45, y: 3 }}
+                transition={motionDisabled ? { duration: 0 } : MOTION_SPRING.pop}
+                aria-hidden="true"
+              >
+                🏨
+              </motion.span>
+            ) : Array.from({ length: unitCount }, (_, marker) => (
+              <motion.i
+                key={`house-${marker}`}
+                initial={motionDisabled ? false : { opacity: 0, scale: 0.45, y: 3 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={motionDisabled ? undefined : { opacity: 0, scale: 0.45, y: 3 }}
+                transition={motionDisabled ? { duration: 0 } : MOTION_SPRING.pop}
+                aria-hidden="true"
+              />
+            ))}
+          </AnimatePresence>
         </motion.span>
       ) : null}
       {tokens.length > 0 ? (
@@ -207,7 +268,7 @@ const MemoTileCard = memo(function TileCard({
                 "--token-offset-y": `${Math.floor(tokenIndex / 3) * 8}px`,
               } as CSSProperties}
               title={token.name}
-              aria-label={`${token.name}'s token`}
+              aria-label={t("game.tokenOf", { name: token.name })}
               layout
               layoutId={`player-token-${token.id}`}
               animate={
@@ -215,14 +276,22 @@ const MemoTileCard = memo(function TileCard({
                   ? { opacity: 1 }
                   : token.jailed
                     ? { x: [0, -2, 2, -2, 0], rotate: [0, -2, 2, -2, 0] }
+                    : token.idle
+                      ? { y: [0, -2, 0], scaleY: [1, 0.98, 1] }
                     : tokenIndex === 0
                     ? { y: [0, -4, 0], scaleY: [1, 0.88, 1.08] }
                     : { y: [0, -2, 0] }
               }
               transition={{
-                duration: motionDisabled ? 0.01 : token.jailed ? 0.45 : 0.42,
-                repeat: motionDisabled ? 0 : token.jailed ? Infinity : 1,
-                ease: "easeOut",
+                duration: motionDisabled
+                  ? 0
+                  : token.jailed
+                    ? MOTION_MS.jailShake / 1000
+                    : token.idle
+                      ? MOTION_MS.tokenIdle / 1000
+                      : MOTION_MS.tokenHop / 1000,
+                repeat: motionDisabled ? 0 : token.jailed || token.idle ? Infinity : 1,
+                ease: [...MOTION_EASE.standard],
               }}
             >
               {token.icon}
@@ -256,9 +325,7 @@ function cornerIcon(type: Tile["type"]) {
 function formatPrice(
   price: number,
   currency: GameState["theme"]["currency"],
+  language: string,
 ) {
-  const formatted = price.toLocaleString("en-US");
-  return currency.format === "before"
-    ? `${currency.symbol}${formatted}`
-    : `${formatted}${currency.symbol}`;
+  return formatMoney(price, currency, language);
 }

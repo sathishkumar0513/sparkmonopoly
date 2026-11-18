@@ -9,7 +9,7 @@ export type ColorGroup =
   | "darkBlue";
 
 export type Tile =
-  | { id: string; type: "go"; name: string; salary: number }
+  | { id: string; type: "go"; name: string; name_ta?: string; salary: number }
   | {
       id: string;
       type: "property";
@@ -26,6 +26,8 @@ export type Tile =
       colorGroup: ColorGroup;
       icon: string;
       businessFact: string;
+      name_ta?: string;
+      fact_ta?: string;
     }
   | {
       id: string;
@@ -36,6 +38,8 @@ export type Tile =
       rentByCount: [number, number, number, number];
       icon: string;
       businessFact: string;
+      name_ta?: string;
+      fact_ta?: string;
     }
   | {
       id: string;
@@ -46,10 +50,12 @@ export type Tile =
       diceMultipliers: [number, number];
       icon: string;
       businessFact: string;
+      name_ta?: string;
+      fact_ta?: string;
     }
-  | { id: string; type: "communityChest" | "chance"; name: string }
-  | { id: string; type: "incomeTax" | "luxuryTax"; name: string; amount: number }
-  | { id: string; type: "jail" | "freeParking" | "goToJail"; name: string };
+  | { id: string; type: "communityChest" | "chance"; name: string; name_ta?: string }
+  | { id: string; type: "incomeTax" | "luxuryTax"; name: string; amount: number; name_ta?: string }
+  | { id: string; type: "jail" | "freeParking" | "goToJail"; name: string; name_ta?: string };
 
 export type CardEffect =
   | { type: "move"; destination: number; collectSalaryOnPass: boolean }
@@ -62,12 +68,16 @@ export type CardEffect =
 export interface ThemeCard {
   id: string;
   text: string;
+  text_ta?: string;
   effect: CardEffect;
 }
 
 export interface Theme {
   id: string;
   name: string;
+  name_ta?: string;
+  description?: string;
+  description_ta?: string;
   currency: {
     symbol: string;
     format: "before" | "after";
@@ -75,6 +85,8 @@ export interface Theme {
       thousand: string;
       million: string;
       billion: string;
+      lakh?: string;
+      crore?: string;
     };
   };
   palette: {
@@ -112,6 +124,10 @@ function isString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+function optionalStringIsValid(record: Record<string, unknown>, key: string): boolean {
+  return !(key in record) || isString(record[key]);
+}
+
 function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
@@ -129,6 +145,9 @@ function isNumberTuple<T extends number>(
 
 function validateTile(value: unknown): value is Tile {
   if (!isRecord(value) || !isString(value.id) || !isString(value.name)) {
+    return false;
+  }
+  if (!optionalStringIsValid(value, "name_ta") || !optionalStringIsValid(value, "fact_ta")) {
     return false;
   }
 
@@ -180,7 +199,12 @@ function validateTile(value: unknown): value is Tile {
 }
 
 function validateCard(value: unknown): value is ThemeCard {
-  if (!isRecord(value) || !isString(value.id) || !isString(value.text)) {
+  if (
+    !isRecord(value) ||
+    !isString(value.id) ||
+    !isString(value.text) ||
+    !optionalStringIsValid(value, "text_ta")
+  ) {
     return false;
   }
 
@@ -219,6 +243,13 @@ export function validateTheme(value: unknown): Theme {
   if (!isString(value.id) || !isString(value.name)) {
     throw new Error("Theme must have a non-empty id and name.");
   }
+  if (
+    !optionalStringIsValid(value, "name_ta") ||
+    !optionalStringIsValid(value, "description") ||
+    !optionalStringIsValid(value, "description_ta")
+  ) {
+    throw new Error(`Theme "${value.id}" has invalid localized text.`);
+  }
 
   const currency = value.currency;
   const palette = value.palette;
@@ -230,7 +261,9 @@ export function validateTheme(value: unknown): Theme {
     !isRecord(currency.shortScale) ||
     !isString(currency.shortScale.thousand) ||
     !isString(currency.shortScale.million) ||
-    !isString(currency.shortScale.billion)
+    !isString(currency.shortScale.billion) ||
+    !optionalStringIsValid(currency.shortScale, "lakh") ||
+    !optionalStringIsValid(currency.shortScale, "crore")
   ) {
     throw new Error(`Theme "${value.id}" has an invalid currency format.`);
   }

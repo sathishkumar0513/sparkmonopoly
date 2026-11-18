@@ -19,4 +19,24 @@ describe("animation queue", () => {
     expect(queue.size).toBe(0);
     expect(queue.isRunning).toBe(false);
   });
+
+  it("continues after a job is stuck beyond the watchdog timeout", async () => {
+    let watchdogCalls = 0;
+    const played: string[] = [];
+    const queue = new AnimationQueue({
+      watchdogMs: 10,
+      onWatchdog: () => { watchdogCalls += 1; },
+    });
+    queue.enqueue(
+      () => new Promise<void>(() => undefined),
+      async () => { played.push("next"); },
+    );
+
+    await queue.drain();
+
+    expect(watchdogCalls).toBe(1);
+    expect(played).toEqual(["next"]);
+    expect(queue.size).toBe(0);
+    expect(queue.isRunning).toBe(false);
+  });
 });
